@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceName": "浙江省家医有约统一数据源",
+  "publishedAt": "2024-08-05T23:59:59+08:00",
+  "province": {
+    "name": "浙江省",
+    "updateTime": "2024年8月5日 23:59:59",
+    "institutions": 2054,
+    "doctors": 11468,
+    "activeDoctors": 9691,
+    "activeRate": 85,
+    "recentAdded": 198200,
+    "singleReplyRate": 83.5,
+    "avgFirstReplyTime": "28分49秒",
+    "singleChats": 1970875,
+    "singleMessages": 10767941,
+    "groupChats": 39079,
+    "activeGroupChats": 29549,
+    "activeGroupChatsRate": 76,
+    "groupMembers": 2851632,
+    "activeGroupMembers": 718021,
+    "activeGroupMembersRate": 25,
+    "groupMessages": 1000415
+  },
+  "cities": [
+    {"id":"wenzhou","name":"温州市","institutions":260,"doctors":1521,"activeDoctors":1285,"activeRate":84.5,"residentsAdded":3790364,"recentAdded":29800,"singleChats":298100,"singleMessages":1623100,"singleReplyRate":84.2,"avgFirstReplyTime":"26分15秒","avgFirstReplySeconds":1575,"groupChats":5900,"activeGroupChats":4461,"groupMembers":430000,"activeGroupMembers":108300,"groupMessages":15100},
+    {"id":"ningbo","name":"宁波市","institutions":242,"doctors":1375,"activeDoctors":1162,"activeRate":84.5,"residentsAdded":3322586,"recentAdded":26200,"singleChats":261300,"singleMessages":1424500,"singleReplyRate":83.9,"avgFirstReplyTime":"27分30秒","avgFirstReplySeconds":1650,"groupChats":5200,"activeGroupChats":3932,"groupMembers":378000,"activeGroupMembers":95200,"groupMessages":13300},
+    {"id":"hangzhou","name":"杭州市","institutions":230,"doctors":1253,"activeDoctors":1059,"activeRate":84.5,"residentsAdded":3121297,"recentAdded":24500,"singleChats":245200,"singleMessages":1335200,"singleReplyRate":85.1,"avgFirstReplyTime":"24分11秒","avgFirstReplySeconds":1451,"groupChats":4900,"activeGroupChats":3705,"groupMembers":355000,"activeGroupMembers":89400,"groupMessages":125000},
+    {"id":"taizhou","name":"台州市","institutions":215,"doctors":1210,"activeDoctors":1022,"activeRate":84.5,"residentsAdded":2689120,"recentAdded":21200,"singleChats":211400,"singleMessages":1151300,"singleReplyRate":83.1,"avgFirstReplyTime":"29分20秒","avgFirstReplySeconds":1760,"groupChats":4200,"activeGroupChats":3176,"groupMembers":304000,"activeGroupMembers":76500,"groupMessages":107000},
+    {"id":"jinhua","name":"金华市","institutions":220,"doctors":1150,"activeDoctors":972,"activeRate":84.5,"residentsAdded":2420150,"recentAdded":19100,"singleChats":190500,"singleMessages":1038700,"singleReplyRate":82.8,"avgFirstReplyTime":"30分02秒","avgFirstReplySeconds":1802,"groupChats":3800,"activeGroupChats":2873,"groupMembers":276000,"activeGroupMembers":69500,"groupMessages":97000},
+    {"id":"shaoxing","name":"绍兴市","institutions":195,"doctors":1080,"activeDoctors":913,"activeRate":84.5,"residentsAdded":2210450,"recentAdded":17400,"singleChats":173800,"singleMessages":947500,"singleReplyRate":83.6,"avgFirstReplyTime":"28分12秒","avgFirstReplySeconds":1692,"groupChats":3400,"activeGroupChats":2571,"groupMembers":247000,"activeGroupMembers":62200,"groupMessages":87000},
+    {"id":"jiaxing","name":"嘉兴市","institutions":185,"doctors":980,"activeDoctors":828,"activeRate":84.5,"residentsAdded":2150340,"recentAdded":16900,"singleChats":168700,"singleMessages":919800,"singleReplyRate":84.0,"avgFirstReplyTime":"27分10秒","avgFirstReplySeconds":1630,"groupChats":3300,"activeGroupChats":2495,"groupMembers":240000,"activeGroupMembers":60400,"groupMessages":84000},
+    {"id":"lishui","name":"丽水市","institutions":175,"doctors":912,"activeDoctors":771,"activeRate":84.5,"residentsAdded":1845910,"recentAdded":14500,"singleChats":144300,"singleMessages":787000,"singleReplyRate":82.5,"avgFirstReplyTime":"312分15秒","avgFirstReplySeconds":1935,"groupChats":2900,"activeGroupChats":2193,"groupMembers":211000,"activeGroupMembers":53100,"groupMessages":74000},
+    {"id":"huzhou","name":"湖州市","institutions":150,"doctors":847,"activeDoctors":716,"activeRate":84.5,"residentsAdded":1620850,"recentAdded":12800,"singleChats":127600,"singleMessages":695500,"singleReplyRate":84.8,"avgFirstReplyTime":"25分45秒","avgFirstReplySeconds":1545,"groupChats":2500,"activeGroupChats":1890,"groupMembers":182000,"activeGroupMembers":45800,"groupMessages":64000},
+    {"id":"quzhou","name":"衢州市","institutions":132,"doctors":760,"activeDoctors":642,"activeRate":84.5,"residentsAdded":1320400,"recentAdded":10400,"singleChats":104100,"singleMessages":567100,"singleReplyRate":81.9,"avgFirstReplyTime":"33分40秒","avgFirstReplySeconds":2020,"groupChats":2000,"activeGroupChats":1512,"groupMembers":145000,"activeGroupMembers":36500,"groupMessages":51000},
+    {"id":"zhoushan","name":"舟山市","institutions":50,"doctors":380,"activeDoctors":321,"activeRate":84.5,"residentsAdded":658519,"recentAdded":5400,"singleChats":45875,"singleMessages":278241,"singleReplyRate":84.5,"avgFirstReplyTime":"26分08秒","avgFirstReplySeconds":1568,"groupChats":979,"activeGroupChats":741,"groupMembers":83632,"activeGroupMembers":21121,"groupMessages":27415}
+  ]
+}
