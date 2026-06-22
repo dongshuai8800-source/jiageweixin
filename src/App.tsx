@@ -63,6 +63,7 @@ export default function App() {
         doctors: province.doctors,
         activeDoctors: province.activeDoctors,
         activeRate: province.activeRate,
+        residentsAdded: cities.reduce((acc, c) => acc + (c.residentsAdded || 0), 0),
         recentAdded: province.recentAdded,
         singleChats: province.singleChats,
         singleReplyRate: province.singleReplyRate,
@@ -89,6 +90,7 @@ export default function App() {
         doctors: province.doctors,
         activeDoctors: province.activeDoctors,
         activeRate: province.activeRate,
+        residentsAdded: cities.reduce((acc, c) => acc + (c.residentsAdded || 0), 0),
         recentAdded: province.recentAdded,
         singleChats: province.singleChats,
         singleReplyRate: province.singleReplyRate,
@@ -111,7 +113,10 @@ export default function App() {
       institutions: city.institutions,
       doctors: city.doctors,
       activeDoctors: city.activeDoctors,
-      activeRate: city.doctors > 0 ? parseFloat(((city.activeDoctors / city.doctors) * 100).toFixed(1)) : 0,
+      activeRate: (city.doctors !== null && city.doctors > 0 && city.activeDoctors !== null)
+        ? parseFloat(((city.activeDoctors / city.doctors) * 100).toFixed(1))
+        : null,
+      residentsAdded: city.residentsAdded,
       recentAdded: city.recentAdded,
       singleChats: city.singleChats,
       singleReplyRate: city.singleReplyRate,
@@ -119,10 +124,14 @@ export default function App() {
       singleMessages: city.singleMessages,
       groupChats: city.groupChats,
       activeGroupChats: city.activeGroupChats,
-      activeGroupChatsRate: city.groupChats > 0 ? parseFloat(((city.activeGroupChats / city.groupChats) * 100).toFixed(1)) : 0,
+      activeGroupChatsRate: (city.groupChats !== null && city.groupChats > 0 && city.activeGroupChats !== null)
+        ? parseFloat(((city.activeGroupChats / city.groupChats) * 100).toFixed(1))
+        : null,
       groupMembers: city.groupMembers,
       activeGroupMembers: city.activeGroupMembers,
-      activeGroupMembersRate: city.groupMembers > 0 ? parseFloat(((city.activeGroupMembers / city.groupMembers) * 100).toFixed(1)) : 0,
+      activeGroupMembersRate: (city.groupMembers !== null && city.groupMembers > 0 && city.activeGroupMembers !== null)
+        ? parseFloat(((city.activeGroupMembers / city.groupMembers) * 100).toFixed(1))
+        : null,
       groupMessages: city.groupMessages
     };
   }, [selectedCityId, province, cities]);
@@ -146,6 +155,16 @@ export default function App() {
         }
       });
   }, [searchQuery, sortBy, cities]);
+
+  const fmt = (val: number | string | null | undefined, suffix = ""): string => {
+    if (val === null || val === undefined || val === "" || (typeof val === "number" && isNaN(val))) {
+      return "-";
+    }
+    if (typeof val === "number") {
+      return val.toLocaleString() + suffix;
+    }
+    return String(val) + suffix;
+  };
 
   return (
     <div 
@@ -204,7 +223,7 @@ export default function App() {
                   <span className="text-[9px] text-gray-500 block leading-none">入驻机构数</span>
                   <div className="mt-1 flex items-baseline justify-center gap-0.5">
                     <span className="text-base font-extrabold font-mono text-white">
-                      {activeData.institutions}
+                      {fmt(activeData.institutions)}
                     </span>
                     <span className="text-[8px] text-gray-500">家</span>
                   </div>
@@ -215,7 +234,7 @@ export default function App() {
                   <span className="text-[9px] text-gray-500 block leading-none">入驻医护</span>
                   <div className="mt-1 flex items-baseline justify-center gap-0.5">
                     <span className="text-base font-extrabold font-mono text-cyan-300">
-                      {activeData.doctors.toLocaleString()}
+                      {fmt(activeData.doctors)}
                     </span>
                     <span className="text-[8px] text-gray-500">位</span>
                   </div>
@@ -226,7 +245,7 @@ export default function App() {
                   <span className="text-[9px] text-gray-500 block leading-none">已激活数</span>
                   <div className="mt-1 flex items-baseline justify-center gap-0.5">
                     <span className="text-base font-extrabold font-mono text-emerald-400">
-                      {activeData.activeDoctors.toLocaleString()}
+                      {fmt(activeData.activeDoctors)}
                     </span>
                     <span className="text-[8px] text-gray-500">人</span>
                   </div>
@@ -241,12 +260,12 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] font-black font-mono text-teal-400">
-                    {activeData.activeRate}%
+                    {fmt(activeData.activeRate, "%")}
                   </span>
                   <div className="w-14 bg-slate-900 border border-slate-800 h-1.5 rounded-full overflow-hidden">
                     <div 
                       className="bg-teal-500 h-full rounded-full" 
-                      style={{ width: `${activeData.activeRate}%` }}
+                      style={{ width: `${activeData.activeRate ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -263,18 +282,30 @@ export default function App() {
                 <span className="text-[9px] font-mono text-gray-500">RESIDENTS</span>
               </div>
 
+              {/* Total Residents Added (Cumulative) */}
               <div className="py-2.5 px-3 rounded-lg bg-slate-950/40 border border-slate-800/80 flex items-center justify-between relative overflow-hidden">
                 <div className="text-left">
-                  <span className="text-[10px] tracking-wider text-gray-404 text-slate-300 block font-medium">添加好友居民数</span>
+                  <span className="text-[10px] tracking-wider text-slate-300 block font-medium">添加居民总数 (累计)</span>
                   <p className="text-[8.5px] text-gray-500 leading-none mt-1">
-                    全省居民及家医微端累计连接
+                    {activeData.isProvince ? "全省" : "当前"}居民及家医微端累计连接
                   </p>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-black font-mono tracking-tight text-emerald-400">
-                    +{activeData.recentAdded.toLocaleString()}
+                  <span className="text-lg font-black font-mono tracking-tight text-white">
+                    {fmt(activeData.residentsAdded)}
                   </span>
                   <span className="text-[9px] font-semibold text-gray-500">人</span>
+                </div>
+              </div>
+
+              {/* Recent Added (Incremental) */}
+              <div className="py-2 px-3 rounded-lg bg-slate-950/20 border border-slate-800/50 flex items-center justify-between">
+                <span className="text-[9.5px] text-slate-400">近期或最近的新增好友数</span>
+                <div className="flex items-baseline gap-0.5">
+                  <span className="text-sm font-extrabold font-mono text-emerald-400">
+                    {activeData.recentAdded !== null ? `+${fmt(activeData.recentAdded)}` : "-"}
+                  </span>
+                  <span className="text-[8px] text-gray-500">人</span>
                 </div>
               </div>
             </div>
@@ -293,13 +324,13 @@ export default function App() {
                 <div className="p-2 rounded bg-slate-950/40 border border-slate-800/60">
                   <span className="text-[9px] text-gray-500 block leading-none mb-1">已回复占比</span>
                   <span className="text-sm font-extrabold font-mono text-emerald-400">
-                    {activeData.singleReplyRate}%
+                    {fmt(activeData.singleReplyRate, "%")}
                   </span>
                 </div>
                 <div className="p-2 rounded bg-slate-950/40 border border-slate-800/60">
                   <span className="text-[9px] text-gray-500 block leading-none mb-1">平均首次回复时长</span>
                   <span className="text-[10.5px] font-bold text-slate-200">
-                    {activeData.avgFirstReplyTime}
+                    {fmt(activeData.avgFirstReplyTime)}
                   </span>
                 </div>
               </div>
@@ -308,13 +339,13 @@ export default function App() {
                 <div className="p-2 bg-slate-950/40 border border-slate-800/60 rounded flex justify-between items-center text-[10.5px]">
                   <span className="text-gray-400">单聊总数</span>
                   <span className="font-mono font-bold text-white">
-                    {activeData.singleChats.toLocaleString()}
+                    {fmt(activeData.singleChats)}
                   </span>
                 </div>
                 <div className="p-2 bg-slate-950/40 border border-slate-800/60 rounded flex justify-between items-center text-[10.5px]">
                   <span className="text-gray-400">发送消息数</span>
                   <span className="font-mono font-bold text-cyan-400">
-                    {activeData.singleMessages.toLocaleString()}
+                    {fmt(activeData.singleMessages)}
                   </span>
                 </div>
               </div>
@@ -335,7 +366,7 @@ export default function App() {
                   <span className="text-[9px] text-gray-500 block leading-none mb-1">群聊总数</span>
                   <div className="flex items-baseline justify-between gap-1">
                     <span className="text-sm font-extrabold font-mono text-white">
-                      {activeData.groupChats.toLocaleString()}
+                      {fmt(activeData.groupChats)}
                     </span>
                     <ChevronUp className="w-3 h-3 text-emerald-500 shrink-0" />
                   </div>
@@ -344,10 +375,10 @@ export default function App() {
                   <span className="text-[9px] text-gray-500 block leading-none mb-1">发言活跃群数</span>
                   <div className="flex items-baseline justify-between gap-1 text-white">
                     <span className="text-sm font-extrabold font-mono">
-                      {activeData.activeGroupChats.toLocaleString()}
+                      {fmt(activeData.activeGroupChats)}
                     </span>
                     <span className="text-[8px] bg-sky-500/10 text-sky-400 px-1 rounded font-bold">
-                      {activeData.activeGroupChatsRate}%
+                      {fmt(activeData.activeGroupChatsRate, "%")}
                     </span>
                   </div>
                 </div>
@@ -357,17 +388,17 @@ export default function App() {
                 <div className="p-2 rounded bg-slate-950/40 border border-slate-800/60">
                   <span className="text-[9px] text-gray-500 block leading-none mb-1">群成员总数</span>
                   <span className="text-[10.5px] font-bold font-mono text-white">
-                    {activeData.groupMembers.toLocaleString()}人
+                    {fmt(activeData.groupMembers)}人
                   </span>
                 </div>
                 <div className="p-2 rounded bg-slate-950/40 border border-slate-800/60">
                   <span className="text-[9px] text-gray-500 block leading-none mb-1">活跃群成员数</span>
                   <div className="flex items-baseline justify-between gap-1 text-white">
                     <span className="text-[10.5px] font-bold font-mono">
-                      {activeData.activeGroupMembers.toLocaleString()}人
+                      {fmt(activeData.activeGroupMembers)}人
                     </span>
                     <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1 rounded font-bold">
-                      {activeData.activeGroupMembersRate}%
+                      {fmt(activeData.activeGroupMembersRate, "%")}
                     </span>
                   </div>
                 </div>
@@ -377,7 +408,7 @@ export default function App() {
                 <div className="z-10">
                   <span className="text-[9.5px] text-gray-400 block leading-none mb-1.5">群聊消息总数</span>
                   <strong className="text-[15px] font-black font-mono text-emerald-400">
-                    {activeData.groupMessages.toLocaleString()} <span className="text-[9px] font-normal text-slate-500">条</span>
+                    {fmt(activeData.groupMessages)} <span className="text-[9px] font-normal text-slate-500">条</span>
                   </strong>
                 </div>
                 <div className="absolute right-2 bottom-0 text-emerald-500/10 translate-y-2 translate-x-1">
@@ -504,9 +535,9 @@ export default function App() {
                               {city.name}
                             </strong>
                             <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap font-sans">
-                              <span>已入驻: <strong className="text-gray-400 font-mono font-medium">{city.doctors.toLocaleString()}</strong>位</span>
+                              <span>已入驻: <strong className="text-gray-400 font-mono font-medium">{fmt(city.doctors)}</strong>位</span>
                               <span className="opacity-30">•</span>
-                              <span>添加居民数: <strong className="text-gray-400 font-mono font-medium">{city.residentsAdded.toLocaleString()}</strong>人</span>
+                              <span>添加居民数: <strong className="text-gray-400 font-mono font-medium">{fmt(city.residentsAdded)}</strong>人</span>
                             </p>
                           </div>
                         </div>

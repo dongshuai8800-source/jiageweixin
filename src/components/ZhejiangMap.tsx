@@ -231,22 +231,28 @@ export default function ZhejiangMap({
                 <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
                   isDark ? "bg-sky-500/10 text-sky-400" : "bg-[#0052cc]/10 text-[#0052cc]"
                 }`}>
-                  激活率: {hoveredCity.doctors > 0 ? ((hoveredCity.activeDoctors / hoveredCity.doctors) * 100).toFixed(1) : "0.0"}%
+                  激活率: {hoveredCity.doctors !== null && hoveredCity.doctors > 0 && hoveredCity.activeDoctors !== null ? ((hoveredCity.activeDoctors / hoveredCity.doctors) * 100).toFixed(1) + "%" : "-"}
                 </span>
               </div>
               
               <div className="grid grid-cols-3 gap-2 text-[10px]">
                 <div>
                   <span className="text-gray-500 block text-[9px] mb-0.5">入驻医护 / 激活</span>
-                  <span className="font-mono font-bold">{hoveredCity.doctors} / {hoveredCity.activeDoctors} 位</span>
+                  <span className="font-mono font-bold">
+                    {hoveredCity.doctors !== null ? hoveredCity.doctors : "-"} / {hoveredCity.activeDoctors !== null ? hoveredCity.activeDoctors : "-"} 位
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[9px] mb-0.5">添加居民</span>
-                  <span className="font-mono font-bold">{(hoveredCity.residentsAdded / 10000).toFixed(1)} 万人</span>
+                  <span className="font-mono font-bold">
+                    {hoveredCity.residentsAdded !== null ? `${(hoveredCity.residentsAdded / 10000).toFixed(1)} 万人` : "-"}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[9px] mb-0.5">近增好友</span>
-                  <span className="text-emerald-500 font-mono font-extrabold">+{hoveredCity.recentAdded.toLocaleString()}人</span>
+                  <span className="text-emerald-500 font-mono font-extrabold text-[10px]">
+                    {hoveredCity.recentAdded !== null ? `+${hoveredCity.recentAdded.toLocaleString()}人` : "-"}
+                  </span>
                 </div>
               </div>
             </motion.div>

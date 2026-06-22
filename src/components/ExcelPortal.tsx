@@ -208,32 +208,62 @@ export default function ExcelPortal({
       const newProvince: ProvinceData = { ...province };
       const provDataRow = pRaw[0];
       
-      Object.keys(provDataRow).forEach(colName => {
-        const trimmed = colName.trim();
-        const mappedKey = PROVINCE_KEYS_MAP[trimmed];
-        if (mappedKey) {
-          const val = provDataRow[colName];
-          if (mappedKey === "updateTime" || mappedKey === "avgFirstReplyTime") {
-            (newProvince as any)[mappedKey] = String(val);
-          } else {
-            (newProvince as any)[mappedKey] = Number(val) || 0;
+      const provinceValues: Record<string, any> = {};
+      const allProvFields = Array.from(new Set(Object.values(PROVINCE_KEYS_MAP)));
+
+      allProvFields.forEach((field) => {
+        const possibleCols = Object.keys(PROVINCE_KEYS_MAP).filter(
+          (k) => PROVINCE_KEYS_MAP[k] === field
+        );
+
+        let excelVal: any = undefined;
+        for (const col of possibleCols) {
+          const actualKey = Object.keys(provDataRow).find(
+            (k) => k.trim() === col.trim()
+          );
+          if (actualKey !== undefined) {
+            excelVal = provDataRow[actualKey];
+            break;
           }
+        }
+
+        if (excelVal === undefined || excelVal === null || String(excelVal).trim() === "") {
+          provinceValues[field] = null;
+        } else if (field === "updateTime" || field === "avgFirstReplyTime") {
+          provinceValues[field] = String(excelVal);
+        } else {
+          const num = Number(excelVal);
+          provinceValues[field] = isNaN(num) ? null : num;
         }
       });
 
+      // Apply fields to newProvince
+      Object.keys(provinceValues).forEach((field) => {
+        (newProvince as any)[field] = provinceValues[field];
+      });
+
       // Recalculate automatic ratios for Province if possible
-      if (newProvince.doctors > 0) {
+      if (newProvince.doctors !== null && newProvince.doctors > 0 && newProvince.activeDoctors !== null) {
         newProvince.activeRate = parseFloat(((newProvince.activeDoctors / newProvince.doctors) * 100).toFixed(1));
+      } else {
+        newProvince.activeRate = null;
       }
-      if (newProvince.groupChats > 0) {
+      
+      if (newProvince.groupChats !== null && newProvince.groupChats > 0 && newProvince.activeGroupChats !== null) {
         newProvince.activeGroupChatsRate = parseFloat(((newProvince.activeGroupChats / newProvince.groupChats) * 100).toFixed(1));
+      } else {
+        newProvince.activeGroupChatsRate = null;
       }
-      if (newProvince.groupMembers > 0) {
+      
+      if (newProvince.groupMembers !== null && newProvince.groupMembers > 0 && newProvince.activeGroupMembers !== null) {
         newProvince.activeGroupMembersRate = parseFloat(((newProvince.activeGroupMembers / newProvince.groupMembers) * 100).toFixed(1));
+      } else {
+        newProvince.activeGroupMembersRate = null;
       }
 
       // Parse Cities
       const updatedCities: CityData[] = cities.map(originalCity => ({ ...originalCity }));
+      const matchedCityIndices = new Set<number>();
       let matchedCount = 0;
 
       if (cRaw.length > 0) {
@@ -253,30 +283,76 @@ export default function ExcelPortal({
 
           if (cityIndex !== -1) {
             matchedCount++;
+            matchedCityIndices.add(cityIndex);
             const cityNode = updatedCities[cityIndex];
 
-            Object.keys(row).forEach(colName => {
-              const trimmed = colName.trim();
-              const mappedKey = CITY_KEYS_MAP[trimmed];
-              if (mappedKey) {
-                const val = row[colName];
-                if (mappedKey === "avgFirstReplyTime") {
-                  (cityNode as any)[mappedKey] = String(val);
-                } else if (mappedKey === "name" || mappedKey === "pinyin" || mappedKey === "svgPath") {
-                  // Do not overwrite topological drawings or static IDs
-                } else {
-                  (cityNode as any)[mappedKey] = Number(val) || 0;
+            const fieldValues: Record<string, any> = {};
+            const allMappedFields = Array.from(new Set(Object.values(CITY_KEYS_MAP)));
+
+            allMappedFields.forEach((field) => {
+              if (field === "name" || field === "pinyin" || field === "svgPath") return;
+
+              const possibleCols = Object.keys(CITY_KEYS_MAP).filter(
+                (k) => CITY_KEYS_MAP[k] === field
+              );
+
+              let excelVal: any = undefined;
+              for (const col of possibleCols) {
+                const actualKey = Object.keys(row).find(
+                  (k) => k.trim() === col.trim()
+                );
+                if (actualKey !== undefined) {
+                  excelVal = row[actualKey];
+                  break;
                 }
+              }
+
+              if (excelVal === undefined || excelVal === null || String(excelVal).trim() === "") {
+                fieldValues[field] = null;
+              } else if (field === "avgFirstReplyTime") {
+                fieldValues[field] = String(excelVal);
+              } else {
+                const num = Number(excelVal);
+                fieldValues[field] = isNaN(num) ? null : num;
               }
             });
 
+            // Apply fields to cityNode
+            Object.keys(fieldValues).forEach((field) => {
+              (cityNode as any)[field] = fieldValues[field];
+            });
+
             // Auto-recalculate activeRate
-            if (cityNode.doctors > 0) {
+            if (cityNode.doctors !== null && cityNode.doctors > 0 && cityNode.activeDoctors !== null) {
               cityNode.activeRate = parseFloat(((cityNode.activeDoctors / cityNode.doctors) * 100).toFixed(1));
+            } else {
+              cityNode.activeRate = null;
             }
           }
         });
       }
+
+      // Reset data for cities that were NOT present in the uploaded tables to 0
+      updatedCities.forEach((city, index) => {
+        if (!matchedCityIndices.has(index)) {
+          city.institutions = 0;
+          city.doctors = 0;
+          city.activeDoctors = 0;
+          city.activeRate = 0;
+          city.residentsAdded = 0;
+          city.recentAdded = 0;
+          city.singleChats = 0;
+          city.singleMessages = 0;
+          city.singleReplyRate = 0;
+          city.avgFirstReplyTime = "0秒";
+          city.avgFirstReplySeconds = 0;
+          city.groupChats = 0;
+          city.activeGroupChats = 0;
+          city.groupMembers = 0;
+          city.activeGroupMembers = 0;
+          city.groupMessages = 0;
+        }
+      });
 
       if (matchedCount === 0 && cRaw.length > 0) {
         throw new Error("没能匹配到浙江11地市中的任何一个，请确保‘地市名称’列的值如：杭州市、温州市 或 宁波市。");
@@ -530,15 +606,23 @@ export default function ExcelPortal({
                     </tr>
                   </thead>
                   <tbody>
-                    {parsedCities.slice(0, 4).map((c, idx) => (
-                      <tr key={idx} className="border-b border-slate-900 last:border-b-0 text-slate-300">
-                        <td className="py-1 py-1.5 font-bold text-slate-100">{c.name}</td>
-                        <td className="py-1 text-right font-mono">{c.institutions}</td>
-                        <td className="py-1 text-right font-mono text-cyan-300">{c.doctors}</td>
-                        <td className="py-1 text-right font-mono text-emerald-400">{c.activeDoctors}</td>
-                        <td className="py-1 text-right font-mono text-amber-500">+{c.recentAdded.toLocaleString()}</td>
-                      </tr>
-                    ))}
+                    {parsedCities.slice(0, 4).map((c, idx) => {
+                      const f = (val: any) => {
+                        if (val === null || val === undefined || (typeof val === "number" && isNaN(val))) return "-";
+                        return typeof val === "number" ? val.toLocaleString() : String(val);
+                      };
+                      return (
+                        <tr key={idx} className="border-b border-slate-900 last:border-b-0 text-slate-300">
+                          <td className="py-1 py-1.5 font-bold text-slate-100">{c.name}</td>
+                          <td className="py-1 text-right font-mono">{f(c.institutions)}</td>
+                          <td className="py-1 text-right font-mono text-cyan-300">{f(c.doctors)}</td>
+                          <td className="py-1 text-right font-mono text-emerald-400">{f(c.activeDoctors)}</td>
+                          <td className="py-1 text-right font-mono text-amber-500">
+                            {c.recentAdded !== null && c.recentAdded !== undefined ? `+${c.recentAdded.toLocaleString()}` : "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
