@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", Courier, monospace;
+}
+
+/* Custom Cockpit Animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  15% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-light {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.1);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.25);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 4s infinite linear;
+}
+
+.animate-pulse-light {
+  animation: pulse-light 3s infinite ease-in-out;
+}
+
+/* Custom scrollbars for a clean tech layout */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.2);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.4);
+}
+
+.animate-spin-slow {
+  animation: spin 30s linear infinite;
+}

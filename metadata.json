@@ -1,0 +1,6 @@
+{
+  "name": "浙江省家医有约数据统计大屏",
+  "description": "基于真实统计数据的浙江省家庭医生（家医有约）数字驾驶舱，提供11市交互式地图联动、机构概况、居民概况与单聊/群聊互动数据的全谱分析大屏。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
