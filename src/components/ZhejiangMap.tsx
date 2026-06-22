@@ -19,21 +19,7 @@ const wan = (value: number | null | undefined) => {
   const current = num(value);
   return current >= 10000 ? `${(current / 10000).toFixed(1)}万` : current.toLocaleString();
 };
-const getCityShortName = (name: string) => name.replace("市", "");
-
-const cityPalette: Record<string, { fill: string; stroke: string; halo: string }> = {
-  huzhou: { fill: "#7dd3fc", stroke: "#bae6fd", halo: "rgba(125,211,252,0.25)" },
-  jiaxing: { fill: "#a5b4fc", stroke: "#c7d2fe", halo: "rgba(165,180,252,0.24)" },
-  hangzhou: { fill: "#fde68a", stroke: "#fef3c7", halo: "rgba(253,230,138,0.24)" },
-  shaoxing: { fill: "#6ee7b7", stroke: "#bbf7d0", halo: "rgba(110,231,183,0.24)" },
-  ningbo: { fill: "#f0abfc", stroke: "#f5d0fe", halo: "rgba(240,171,252,0.23)" },
-  zhoushan: { fill: "#fcd34d", stroke: "#fde68a", halo: "rgba(252,211,77,0.22)" },
-  jinhua: { fill: "#fca5a5", stroke: "#fecaca", halo: "rgba(252,165,165,0.23)" },
-  quzhou: { fill: "#c4b5fd", stroke: "#ddd6fe", halo: "rgba(196,181,253,0.23)" },
-  taizhou: { fill: "#93c5fd", stroke: "#bfdbfe", halo: "rgba(147,197,253,0.23)" },
-  lishui: { fill: "#86efac", stroke: "#bbf7d0", halo: "rgba(134,239,172,0.23)" },
-  wenzhou: { fill: "#fbbf24", stroke: "#fde68a", halo: "rgba(251,191,36,0.22)" }
-};
+const shortName = (name: string) => name.replace("市", "");
 
 export default function ZhejiangMap({
   cities,
@@ -48,7 +34,6 @@ export default function ZhejiangMap({
   const activeCity = selectedCity ?? hoveredCity;
   const hubCity = useMemo(() => cities.find((city) => city.id === "hangzhou") ?? cities[0], [cities]);
   const maxResidents = useMemo(() => Math.max(1, ...cities.map((city) => num(city.residentsAdded))), [cities]);
-  const maxDoctors = useMemo(() => Math.max(1, ...cities.map((city) => num(city.doctors))), [cities]);
 
   const handleCityClick = (city: CityData) => {
     onSelectCity(selectedCityId === city.id ? null : city.id);
@@ -61,10 +46,10 @@ export default function ZhejiangMap({
 
   return (
     <div className="relative w-full h-[600px] lg:h-[725px] rounded-2xl border border-cyan-500/20 bg-[#020617]/90 shadow-[0_4px_35px_rgba(0,0,0,0.55),inset_0_0_35px_rgba(34,211,238,0.08)] text-white p-4 flex flex-col justify-between overflow-hidden" id="zhejiang-map-container">
-      <div className="absolute inset-0 pointer-events-none opacity-80">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.14),transparent_43%),linear-gradient(rgba(34,211,238,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.04)_1px,transparent_1px)] bg-[size:100%_100%,30px_30px,30px_30px]" />
-        <div className="absolute right-0 top-0 h-full w-[46%] bg-gradient-to-l from-cyan-500/10 via-sky-500/5 to-transparent" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent animate-pulse" />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.12),transparent_42%),linear-gradient(rgba(34,211,238,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.035)_1px,transparent_1px)] bg-[size:100%_100%,32px_32px,32px_32px]" />
+        <div className="absolute right-0 top-0 h-full w-[45%] bg-gradient-to-l from-sky-500/8 via-cyan-500/4 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent" />
       </div>
 
       <div className="flex justify-between items-start z-20 gap-3">
@@ -75,9 +60,9 @@ export default function ZhejiangMap({
           </div>
           <h1 className="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-emerald-200 bg-clip-text text-transparent flex items-center gap-2 flex-wrap">
             浙江省“加个微信，多个医生朋友”数据统计大屏
-            <span className="text-[9.5px] py-0.5 px-2 rounded-full font-bold border bg-cyan-500/10 text-cyan-200 border-cyan-400/30">标准行政区划版</span>
+            <span className="text-[9.5px] py-0.5 px-2 rounded-full font-bold border bg-cyan-500/10 text-cyan-200 border-cyan-400/30">行政底图版</span>
           </h1>
-          <span className="text-[11px] text-slate-400 font-mono">数据更新截止时间：{updateTime} ｜ 参考浙江省标准地图视觉结构优化</span>
+          <span className="text-[11px] text-slate-400 font-mono">数据更新截止时间：{updateTime} ｜ 标准行政区划底图 + 服务数据叠加</span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -92,63 +77,59 @@ export default function ZhejiangMap({
       <div className="relative z-10 flex-1 min-h-0 mt-1 flex items-center justify-center">
         <div className="absolute left-3 top-4 z-20 rounded-xl border border-cyan-400/15 bg-slate-950/45 px-3 py-2 backdrop-blur-sm">
           <div className="flex items-center gap-1.5 text-[10px] text-cyan-200 font-semibold"><Waves className="w-3 h-3" />省级数据流向</div>
-          <div className="mt-1 text-[9px] text-slate-400 leading-relaxed">杭州枢纽连接各地市<br />行政区划底图 + 服务数据叠加</div>
+          <div className="mt-1 text-[9px] text-slate-400 leading-relaxed">保留行政区划轮廓<br />仅在交互时突出服务数据</div>
         </div>
 
-        <svg viewBox="0 0 540 500" className="w-full h-full max-h-[585px] drop-shadow-[0_25px_45px_rgba(8,47,73,0.38)]" onMouseLeave={() => setHoveredCity(null)}>
+        <svg viewBox="0 0 540 500" className="w-full h-full max-h-[585px] drop-shadow-[0_25px_45px_rgba(8,47,73,0.34)]" onMouseLeave={() => setHoveredCity(null)}>
           <defs>
-            <radialGradient id="seaGlow" cx="77%" cy="28%" r="70%">
-              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.22" />
-              <stop offset="65%" stopColor="#0f172a" stopOpacity="0.03" />
+            <filter id="softMapShadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#000000" floodOpacity="0.32" />
+            </filter>
+            <filter id="selectedShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#34d399" floodOpacity="0.75" />
+            </filter>
+            <radialGradient id="eastSea" cx="80%" cy="22%" r="78%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.14" />
+              <stop offset="65%" stopColor="#082f49" stopOpacity="0.03" />
               <stop offset="100%" stopColor="#020617" stopOpacity="0" />
             </radialGradient>
-            <filter id="mapGlow" x="-40%" y="-40%" width="180%" height="180%">
-              <feDropShadow dx="0" dy="0" stdDeviation="3.5" floodColor="#38bdf8" floodOpacity="0.35" />
-            </filter>
-            <filter id="activeGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="0" stdDeviation="7" floodColor="#34d399" floodOpacity="0.85" />
-            </filter>
           </defs>
 
-          <rect x="0" y="0" width="540" height="500" fill="url(#seaGlow)" opacity="0.9" />
-          <text x="420" y="70" className="fill-cyan-300/20 text-[18px] tracking-[0.9em] font-serif">东 海</text>
-          <text x="38" y="462" className="fill-slate-500/55 text-[9px] font-mono">省界 / 市界 / 群岛示意 · 数据服务图层</text>
+          <rect x="0" y="0" width="540" height="500" fill="url(#eastSea)" opacity="0.9" />
+          <text x="430" y="76" className="fill-cyan-300/18 text-[18px] tracking-[0.65em] font-serif">东海</text>
+          <text x="42" y="462" className="fill-slate-500/55 text-[9px] font-mono">行政区划示意 · 数据图层随点击联动</text>
+
           <g transform="translate(14 4) scale(0.94)">
             {hubCity && cities.filter((city) => city.id !== hubCity.id).map((city) => {
+              const showFlow = !selectedCityId || selectedCityId === city.id || selectedCityId === hubCity.id;
               const mx = (hubCity.labelX + city.labelX) / 2;
               const my = (hubCity.labelY + city.labelY) / 2 - 42;
-              return <path key={`flow-${city.id}`} d={`M ${hubCity.labelX} ${hubCity.labelY} Q ${mx} ${my} ${city.labelX} ${city.labelY}`} fill="none" stroke="#38bdf8" strokeOpacity="0.12" strokeWidth="1" strokeDasharray="5 11" />;
+              return <path key={`flow-${city.id}`} d={`M ${hubCity.labelX} ${hubCity.labelY} Q ${mx} ${my} ${city.labelX} ${city.labelY}`} fill="none" stroke="#38bdf8" strokeOpacity={showFlow ? 0.11 : 0.03} strokeWidth={showFlow ? 1.1 : 0.6} strokeDasharray="5 12" />;
             })}
 
-            {[8, 5].map((offset) => (
-              <g key={`depth-${offset}`} opacity={0.11 - offset * 0.006} transform={`translate(${offset * 0.5} ${offset})`}>
-                {cities.map((city) => <path key={`depth-city-${city.id}-${offset}`} d={city.svgPath} fill="#0f172a" stroke="#075985" strokeWidth="1" />)}
-              </g>
-            ))}
+            <g opacity="0.42" transform="translate(4 8)">
+              {cities.map((city) => <path key={`base-shadow-${city.id}`} d={city.svgPath} fill="#020617" stroke="none" />)}
+            </g>
 
             {cities.map((city) => {
               const selected = selectedCityId === city.id;
               const hovered = hoveredCity?.id === city.id;
               const dimOthers = Boolean(selectedCityId && !selected);
               const residentsLevel = num(city.residentsAdded) / maxResidents;
-              const doctorsLevel = num(city.doctors) / maxDoctors;
-              const pillarHeight = 18 + residentsLevel * 46;
-              const palette = cityPalette[city.id] ?? { fill: "#67e8f9", stroke: "#bae6fd", halo: "rgba(103,232,249,0.22)" };
-              const fillOpacity = dimOthers ? 0.34 : selected ? 0.96 : hovered ? 0.86 : 0.66;
-              const strokeOpacity = dimOthers ? 0.22 : selected || hovered ? 0.95 : 0.56;
+              const fill = selected ? "rgba(16,185,129,0.74)" : hovered ? "rgba(14,165,233,0.42)" : "rgba(15,38,62,0.72)";
+              const stroke = selected ? "#bbf7d0" : hovered ? "#a5f3fc" : "rgba(148,163,184,0.52)";
+              const node = selected ? "#34d399" : hovered ? "#67e8f9" : "#94a3b8";
+              const opacity = dimOthers ? 0.32 : 1;
 
               return (
-                <motion.g key={city.id} animate={{ y: selected ? -7 : hovered ? -3 : 0, scale: selected ? 1.014 : hovered ? 1.008 : 1 }} transition={{ duration: 0.22, ease: "easeOut" }}>
-                  <path d={city.svgPath} fill={palette.fill} fillOpacity={fillOpacity} stroke={selected ? "#bbf7d0" : palette.stroke} strokeOpacity={strokeOpacity} strokeWidth={selected || hovered ? 2.2 : 1.05} filter={selected || hovered ? "url(#activeGlow)" : "url(#mapGlow)"} />
-                  <path d={city.svgPath} fill="transparent" stroke="transparent" strokeWidth="20" className="cursor-pointer" onMouseEnter={() => setHoveredCity(city)} onClick={() => handleCityClick(city)} />
-                  <circle cx={city.labelX} cy={city.labelY} r={9 + doctorsLevel * 9} fill={palette.halo} opacity={dimOthers ? 0.28 : 0.72} />
-                  <line x1={city.labelX} y1={city.labelY} x2={city.labelX} y2={city.labelY - pillarHeight} stroke={selected ? "#34d399" : palette.stroke} strokeWidth={selected ? 5 : 3.2} strokeLinecap="round" opacity={dimOthers ? 0.25 : selected ? 1 : 0.58} />
-                  <circle cx={city.labelX} cy={city.labelY} r={selected ? 6 : hovered ? 5.2 : 4} fill={selected ? "#34d399" : palette.stroke} stroke="#ecfeff" strokeWidth="1" opacity={dimOthers ? 0.32 : 0.95} />
-                  {(selected || hovered) && <circle cx={city.labelX} cy={city.labelY} r="12" fill={selected ? "rgba(52,211,153,0.14)" : palette.halo} className="animate-ping" />}
-                  <g opacity={dimOthers ? 0.36 : 1} className="pointer-events-none">
-                    <rect x={city.labelX - 24} y={city.labelY - pillarHeight - 28} width="48" height="18" rx="6" fill="rgba(2,6,23,0.78)" stroke={selected ? "#34d399" : palette.stroke} strokeOpacity="0.42" />
-                    <text x={city.labelX} y={city.labelY - pillarHeight - 15} textAnchor="middle" className="fill-slate-100 text-[10px] font-bold tracking-wider">{getCityShortName(city.name)}</text>
-                    <text x={city.labelX} y={city.labelY + 18} textAnchor="middle" className="fill-slate-100/75 text-[8px] font-mono">{wan(city.residentsAdded)}</text>
+                <motion.g key={city.id} animate={{ y: selected ? -6 : hovered ? -2 : 0 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+                  <path d={city.svgPath} fill={fill} stroke={stroke} strokeWidth={selected || hovered ? 2.1 : 1.05} opacity={opacity} filter={selected || hovered ? "url(#selectedShadow)" : "url(#softMapShadow)"} />
+                  <path d={city.svgPath} fill="transparent" stroke="transparent" strokeWidth="22" className="cursor-pointer" onMouseEnter={() => setHoveredCity(city)} onClick={() => handleCityClick(city)} />
+                  <circle cx={city.labelX} cy={city.labelY} r={5 + residentsLevel * 5} fill={node} opacity={dimOthers ? 0.36 : 0.92} stroke="#e2e8f0" strokeWidth="0.8" />
+                  {(selected || hovered) && <circle cx={city.labelX} cy={city.labelY} r="13" fill={selected ? "rgba(52,211,153,0.14)" : "rgba(34,211,238,0.12)"} className="animate-ping" />}
+                  <g opacity={dimOthers ? 0.34 : 1} className="pointer-events-none">
+                    <rect x={city.labelX - 23} y={city.labelY - 26} width="46" height="18" rx="6" fill="rgba(2,6,23,0.72)" stroke={selected ? "#34d399" : "rgba(148,163,184,0.45)"} strokeWidth="0.8" />
+                    <text x={city.labelX} y={city.labelY - 13} textAnchor="middle" className="fill-slate-100 text-[10px] font-bold tracking-wider">{shortName(city.name)}</text>
                   </g>
                 </motion.g>
               );
@@ -164,7 +145,7 @@ export default function ZhejiangMap({
         </motion.div>}
       </AnimatePresence>
 
-      <div className="flex justify-between items-center border-t border-cyan-400/10 pt-2 z-20"><div className="flex gap-3 text-[10px] text-slate-400"><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-cyan-400/70 border border-cyan-200/70 block" />行政区划图层</div><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-400 border border-emerald-200 block animate-pulse" />联动聚焦地市</div><div className="hidden sm:flex items-center gap-1"><span className="w-7 h-px bg-gradient-to-r from-cyan-300/20 via-cyan-300 to-transparent block" />省级数据流</div></div><span className="text-[9px] font-mono opacity-70 flex items-center gap-1 text-slate-400"><Info className="w-3 h-3" />点击地市聚焦，再点一次取消</span></div>
+      <div className="flex justify-between items-center border-t border-cyan-400/10 pt-2 z-20"><div className="flex gap-3 text-[10px] text-slate-400"><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-400/70 border border-slate-200/50 block" />行政底图</div><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-400 border border-emerald-200 block animate-pulse" />选中地市</div><div className="hidden sm:flex items-center gap-1"><span className="w-7 h-px bg-gradient-to-r from-cyan-300/20 via-cyan-300 to-transparent block" />省级数据流</div></div><span className="text-[9px] font-mono opacity-70 flex items-center gap-1 text-slate-400"><Info className="w-3 h-3" />点击地市聚焦，再点一次取消</span></div>
     </div>
   );
 }
