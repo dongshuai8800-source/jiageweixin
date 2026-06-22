@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { citiesData } from "../data";
 import { CityData } from "../types";
-import { MapPin, Compass, Info } from "lucide-react";
+import { MapPin, Compass, Info, FileSpreadsheet, RotateCcw } from "lucide-react";
 
 interface ZhejiangMapProps {
+  cities: CityData[];
+  updateTime: string;
   selectedCityId: string | null;
   onSelectCity: (cityId: string | null) => void;
   hoveredCity: CityData | null;
   setHoveredCity: (city: CityData | null) => void;
   theme: "dark" | "light";
+  onOpenUpload: () => void;
 }
 
 export default function ZhejiangMap({
+  cities,
+  updateTime,
   selectedCityId,
   onSelectCity,
   hoveredCity,
   setHoveredCity,
-  theme
+  theme,
+  onOpenUpload
 }: ZhejiangMapProps) {
   const isDark = theme === "dark";
 
@@ -36,7 +41,7 @@ export default function ZhejiangMap({
       </div>
 
       {/* Map Control Header */}
-      <div className="flex justify-between items-start z-10">
+      <div className="flex justify-between items-start z-10 flex-wrap gap-2">
         <div className="flex flex-col">
           <h1 className="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent flex items-center gap-2">
             浙江省家医有约数据统计大屏
@@ -45,25 +50,37 @@ export default function ZhejiangMap({
             </span>
           </h1>
           <span className="text-[11px] text-gray-400 font-mono mt-1">
-            数据更新截止时间：2024年8月5日 23:59:59
+            数据更新截止时间：{updateTime}
           </span>
         </div>
         
-        {selectedCityId && (
-          <motion.button
-            id="reset-map-zoom"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onSelectCity(null)}
-            className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all flex items-center gap-1 cursor-pointer font-medium ${
-              isDark 
-                ? "bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.15)]" 
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
-            }`}
+        <div className="flex items-center gap-2">
+          {/* High Fidelity Excel Portal Button */}
+          <button
+            id="open-excel-portal"
+            onClick={onOpenUpload}
+            className="text-[10.5px] px-3 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer font-bold shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:shadow-[0_0_15px_rgba(16,185,129,0.35)] transition-all"
           >
-            返回全省总览
-          </motion.button>
-        )}
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Excel 导入</span>
+          </button>
+
+          {selectedCityId && (
+            <motion.button
+              id="reset-map-zoom"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onSelectCity(null)}
+              className={`text-[10px] px-2.5 py-1.5 rounded border transition-all flex items-center gap-1 cursor-pointer font-medium ${
+                isDark 
+                  ? "bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.15)]" 
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
+              }`}
+            >
+              返回全省
+            </motion.button>
+          )}
+        </div>
       </div>
 
       {/* Main SVG Map Area */}
@@ -79,7 +96,7 @@ export default function ZhejiangMap({
         >
           {/* Outer edge high precision shadow glow for paths */}
           <g className="opacity-30">
-            {citiesData.map((city) => (
+            {cities.map((city) => (
               <path
                 key={`shadow-${city.id}`}
                 d={city.svgPath}
@@ -94,7 +111,7 @@ export default function ZhejiangMap({
 
           {/* Interactive City Paths */}
           <g>
-            {citiesData.map((city) => {
+            {cities.map((city) => {
               const isSelected = selectedCityId === city.id;
               const isHoveredLocal = hoveredCity?.id === city.id;
               
@@ -119,7 +136,7 @@ export default function ZhejiangMap({
                   stroke={strokeColor}
                   strokeWidth={isSelected || isHoveredLocal ? "2.5" : "1.2"}
                   strokeLinejoin="round"
-                  className="cursor-pointer transition-colors duration-400"
+                  className="cursor-pointer transition-colors duration-450"
                   whileHover={{ scale: 1.012 }}
                   onClick={() => onSelectCity(isSelected ? null : city.id)}
                   onMouseEnter={() => setHoveredCity(city)}
@@ -131,7 +148,7 @@ export default function ZhejiangMap({
 
           {/* City Labels & Indicators */}
           <g className="pointer-events-none">
-            {citiesData.map((city) => {
+            {cities.map((city) => {
               const isSelected = selectedCityId === city.id;
               const isHoveredLocal = hoveredCity?.id === city.id;
               const activeColor = isSelected ? "#10b981" : isHoveredLocal ? (isDark ? "#38bdf8" : "#0052cc") : (isDark ? "#0ea5e9" : "#475569");
@@ -211,25 +228,25 @@ export default function ZhejiangMap({
                     ({hoveredCity.pinyin})
                   </span>
                 </span>
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
                   isDark ? "bg-sky-500/10 text-sky-400" : "bg-[#0052cc]/10 text-[#0052cc]"
                 }`}>
-                  激活率: {((hoveredCity.activeDoctors/hoveredCity.doctors)*100).toFixed(1)}%
+                  激活率: {hoveredCity.doctors > 0 ? ((hoveredCity.activeDoctors / hoveredCity.doctors) * 100).toFixed(1) : "0.0"}%
                 </span>
               </div>
               
               <div className="grid grid-cols-3 gap-2 text-[10px]">
                 <div>
-                  <span className="text-gray-500 block text-[9px] mb-0.5">入驻医护</span>
-                  <span className="font-mono font-bold">{hoveredCity.doctors} 位</span>
+                  <span className="text-gray-500 block text-[9px] mb-0.5">入驻医护 / 激活</span>
+                  <span className="font-mono font-bold">{hoveredCity.doctors} / {hoveredCity.activeDoctors} 位</span>
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[9px] mb-0.5">添加居民</span>
-                  <span className="font-mono font-bold">{(hoveredCity.residentsAdded / 10000).toFixed(1)} 万</span>
+                  <span className="font-mono font-bold">{(hoveredCity.residentsAdded / 10000).toFixed(1)} 万人</span>
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[9px] mb-0.5">近增好友</span>
-                  <span className="text-emerald-500 font-mono font-extrabold">+{hoveredCity.recentAdded.toLocaleString()}</span>
+                  <span className="text-emerald-500 font-mono font-extrabold">+{hoveredCity.recentAdded.toLocaleString()}人</span>
                 </div>
               </div>
             </motion.div>

@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { provinceData, citiesData } from "./data";
-import { CityData } from "./types";
+import { CityData, ProvinceData } from "./types";
 import ZhejiangMap from "./components/ZhejiangMap";
+import ExcelPortal from "./components/ExcelPortal";
 import {
   Building2,
   Users,
@@ -22,8 +23,33 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"friends" | "doctors" | "name">("friends");
 
+  // Live state hooks for dynamic Excel loading
+  const [province, setProvince] = useState<ProvinceData>(provinceData);
+  const [cities, setCities] = useState<CityData[]>(citiesData);
+  const [isExcelOpen, setIsExcelOpen] = useState(false);
+  const [alertText, setAlertText] = useState<string | null>(null);
+
   const handleSelectCity = (cityId: string | null) => {
     setSelectedCityId(cityId);
+  };
+
+  const triggerAlertToast = (text: string) => {
+    setAlertText(text);
+    setTimeout(() => {
+      setAlertText(null);
+    }, 4000);
+  };
+
+  const handleImportExcelData = (newProvince: ProvinceData, newCities: CityData[]) => {
+    setProvince(newProvince);
+    setCities(newCities);
+    triggerAlertToast("Excel 数据解析导入成功，总览及11地市图表指标已同步！");
+  };
+
+  const handleResetData = () => {
+    setProvince(provinceData);
+    setCities(citiesData);
+    triggerAlertToast("省份及11地市数据已成功重置回默认的初始指标！");
   };
 
   // Resolve current active dataset based on selected city (or general province overview)
@@ -32,35 +58,60 @@ export default function App() {
       return {
         isProvince: true,
         name: "浙江省",
-        updateTime: provinceData.updateTime,
-        institutions: provinceData.institutions,
-        doctors: provinceData.doctors,
-        activeDoctors: provinceData.activeDoctors,
-        activeRate: provinceData.activeRate,
-        recentAdded: provinceData.recentAdded,
-        singleChats: provinceData.singleChats,
-        singleReplyRate: provinceData.singleReplyRate,
-        avgFirstReplyTime: provinceData.avgFirstReplyTime,
-        singleMessages: provinceData.singleMessages,
-        groupChats: provinceData.groupChats,
-        activeGroupChats: provinceData.activeGroupChats,
-        activeGroupChatsRate: provinceData.activeGroupChatsRate,
-        groupMembers: provinceData.groupMembers,
-        activeGroupMembers: provinceData.activeGroupMembers,
-        activeGroupMembersRate: provinceData.activeGroupMembersRate,
-        groupMessages: provinceData.groupMessages
+        updateTime: province.updateTime,
+        institutions: province.institutions,
+        doctors: province.doctors,
+        activeDoctors: province.activeDoctors,
+        activeRate: province.activeRate,
+        recentAdded: province.recentAdded,
+        singleChats: province.singleChats,
+        singleReplyRate: province.singleReplyRate,
+        avgFirstReplyTime: province.avgFirstReplyTime,
+        singleMessages: province.singleMessages,
+        groupChats: province.groupChats,
+        activeGroupChats: province.activeGroupChats,
+        activeGroupChatsRate: province.activeGroupChatsRate,
+        groupMembers: province.groupMembers,
+        activeGroupMembers: province.activeGroupMembers,
+        activeGroupMembersRate: province.activeGroupMembersRate,
+        groupMessages: province.groupMessages
       };
     }
 
-    const city = citiesData.find((c) => c.id === selectedCityId)!;
+    const city = cities.find((c) => c.id === selectedCityId);
+    if (!city) {
+      // Graceful fallback if a city is deleted or selected incorrectly
+      return {
+        isProvince: true,
+        name: "浙江省",
+        updateTime: province.updateTime,
+        institutions: province.institutions,
+        doctors: province.doctors,
+        activeDoctors: province.activeDoctors,
+        activeRate: province.activeRate,
+        recentAdded: province.recentAdded,
+        singleChats: province.singleChats,
+        singleReplyRate: province.singleReplyRate,
+        avgFirstReplyTime: province.avgFirstReplyTime,
+        singleMessages: province.singleMessages,
+        groupChats: province.groupChats,
+        activeGroupChats: province.activeGroupChats,
+        activeGroupChatsRate: province.activeGroupChatsRate,
+        groupMembers: province.groupMembers,
+        activeGroupMembers: province.activeGroupMembers,
+        activeGroupMembersRate: province.activeGroupMembersRate,
+        groupMessages: province.groupMessages
+      };
+    }
+
     return {
       isProvince: false,
       name: city.name,
-      updateTime: "2024年8月5日 23:59:59",
+      updateTime: province.updateTime,
       institutions: city.institutions,
       doctors: city.doctors,
       activeDoctors: city.activeDoctors,
-      activeRate: parseFloat(((city.activeDoctors / city.doctors) * 100).toFixed(1)),
+      activeRate: city.doctors > 0 ? parseFloat(((city.activeDoctors / city.doctors) * 100).toFixed(1)) : 0,
       recentAdded: city.recentAdded,
       singleChats: city.singleChats,
       singleReplyRate: city.singleReplyRate,
@@ -68,17 +119,17 @@ export default function App() {
       singleMessages: city.singleMessages,
       groupChats: city.groupChats,
       activeGroupChats: city.activeGroupChats,
-      activeGroupChatsRate: parseFloat(((city.activeGroupChats / city.groupChats) * 100).toFixed(1)),
+      activeGroupChatsRate: city.groupChats > 0 ? parseFloat(((city.activeGroupChats / city.groupChats) * 100).toFixed(1)) : 0,
       groupMembers: city.groupMembers,
       activeGroupMembers: city.activeGroupMembers,
-      activeGroupMembersRate: parseFloat(((city.activeGroupMembers / city.groupMembers) * 100).toFixed(1)),
+      activeGroupMembersRate: city.groupMembers > 0 ? parseFloat(((city.activeGroupMembers / city.groupMembers) * 100).toFixed(1)) : 0,
       groupMessages: city.groupMessages
     };
-  }, [selectedCityId]);
+  }, [selectedCityId, province, cities]);
 
   // Filter and sort cities list for "各地市明细"
   const filteredAndSortedCities = useMemo(() => {
-    return citiesData
+    return cities
       .filter((city) => {
         const matchesSearch =
           city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +145,7 @@ export default function App() {
           return a.name.localeCompare(b.name, "zh-CN");
         }
       });
-  }, [searchQuery, sortBy]);
+  }, [searchQuery, sortBy, cities]);
 
   return (
     <div 
@@ -340,11 +391,14 @@ export default function App() {
           {/* CENTER COLUMN: Zhejiang Map and Title Area (Sized to lg:col-span-5 to amplify maps and visual cockpit focus) */}
           <section className="lg:col-span-5 flex flex-col justify-between h-full">
             <ZhejiangMap
+              cities={cities}
+              updateTime={province.updateTime}
               selectedCityId={selectedCityId}
               onSelectCity={handleSelectCity}
               hoveredCity={hoveredCity}
               setHoveredCity={setHoveredCity}
               theme="dark"
+              onOpenUpload={() => setIsExcelOpen(true)}
             />
           </section>
 
@@ -490,9 +544,36 @@ export default function App() {
 
         </div>
 
-
-
       </div>
+
+      {/* Excel Management Modal */}
+      <ExcelPortal
+        isOpen={isExcelOpen}
+        onClose={() => setIsExcelOpen(false)}
+        province={province}
+        cities={cities}
+        onImport={handleImportExcelData}
+        onReset={handleResetData}
+      />
+
+      {/* Dynamic Alert Notification Toast */}
+      <AnimatePresence>
+        {alertText && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed bottom-6 right-6 bg-slate-900/95 border border-emerald-500/40 text-[#10b981] px-4 py-3 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] flex items-center gap-3 z-50 text-xs selection:bg-emerald-500/10"
+          >
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div className="font-sans">
+              <p className="font-extrabold text-white text-[11px]">大屏数据更新成功</p>
+              <p className="text-[10px] text-emerald-300/90 mt-0.5">{alertText}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
