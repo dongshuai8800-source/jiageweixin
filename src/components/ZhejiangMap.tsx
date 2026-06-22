@@ -2,23 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import "echarts-gl";
 import { motion, AnimatePresence } from "motion/react";
-import { citiesData } from "../data";
 import type { CityData } from "../types";
-import { Activity, Info, MapPin, RotateCcw, Satellite, Waves } from "lucide-react";
+import { Activity, FileSpreadsheet, Info, MapPin, RotateCcw, Satellite, Waves } from "lucide-react";
 
 interface ZhejiangMapProps {
+  cities: CityData[];
+  updateTime: string;
   selectedCityId: string | null;
   onSelectCity: (cityId: string | null) => void;
   hoveredCity: CityData | null;
   setHoveredCity: (city: CityData | null) => void;
   theme: "dark" | "light";
+  onOpenUpload: () => void;
 }
 
 type GeoCoordinate = [number, number];
 
 const MAP_NAME = "zhejiang-digital-twin";
-
-// 浙江省真实 GeoJSON 数据源。优先使用包含地市边界的 full 数据，失败时回退到省级边界。
 const GEO_JSON_SOURCES = [
   "https://geo.datav.aliyun.com/areas_v3/bound/330000_full.json",
   "https://geo.datav.aliyun.com/areas_v3/bound/330000.json"
@@ -38,24 +38,30 @@ const cityCoordinates: Record<string, GeoCoordinate> = {
   lishui: [119.9219, 28.451]
 };
 
-const formatTenThousand = (value: number) => {
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(1)}万`;
-  }
-  return value.toLocaleString();
+const safeNumber = (value: number | null | undefined) => {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
 
-const resolveCityByRegionName = (regionName?: string) => {
+const formatTenThousand = (value: number | null | undefined) => {
+  const current = safeNumber(value);
+  if (current >= 10000) return `${(current / 10000).toFixed(1)}万`;
+  return current.toLocaleString();
+};
+
+const resolveCityByRegionName = (cities: CityData[], regionName?: string) => {
   if (!regionName) return null;
-  return citiesData.find((city) => city.name === regionName || city.name.replace("市", "") === regionName.replace("市", "")) ?? null;
+  return cities.find((city) => city.name === regionName || city.name.replace("市", "") === regionName.replace("市", "")) ?? null;
 };
 
 export default function ZhejiangMap({
+  cities,
+  updateTime,
   selectedCityId,
   onSelectCity,
   hoveredCity,
   setHoveredCity,
-  theme
+  theme,
+  onOpenUpload
 }: ZhejiangMapProps) {
   const chartDomRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -63,27 +69,16 @@ export default function ZhejiangMap({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const isDark = theme === "dark";
-  const selectedCity = useMemo(
-    () => citiesData.find((city) => city.id === selectedCityId) ?? null,
-    [selectedCityId]
-  );
+  const selectedCity = useMemo(() => cities.find((city) => city.id === selectedCityId) ?? null, [cities, selectedCityId]);
   const activeCity = selectedCity ?? hoveredCity;
 
-  const maxResidents = useMemo(
-    () => Math.max(...citiesData.map((city) => city.residentsAdded)),
-    []
-  );
-  const maxDoctors = useMemo(
-    () => Math.max(...citiesData.map((city) => city.doctors)),
-    []
-  );
+  const maxResidents = useMemo(() => Math.max(1, ...cities.map((city) => safeNumber(city.residentsAdded))), [cities]);
+  const maxDoctors = useMemo(() => Math.max(1, ...cities.map((city) => safeNumber(city.doctors))), [cities]);
 
   useEffect(() => {
     if (!chartDomRef.current) return;
 
-    const chart = echarts.init(chartDomRef.current, isDark ? "dark" : undefined, {
-      renderer: "canvas"
-    });
+    const chart = echarts.init(chartDomRef.current, isDark ? "dark" : undefined, { renderer: "canvas" });
     chartRef.current = chart;
     chart.showLoading("default", {
       text: "正在加载浙江省真实 GeoJSON 地图...",
@@ -100,10 +95,7 @@ export default function ZhejiangMap({
       for (const source of GEO_JSON_SOURCES) {
         try {
           const response = await fetch(source);
-          if (!response.ok) {
-            throw new Error(`GeoJSON 请求失败：${response.status}`);
-          }
-
+          if (!response.ok) throw new Error(`GeoJSON 请求失败：${response.status}`);
           const geoJson = await response.json();
           if (cancelled) return;
 
@@ -128,9 +120,7 @@ export default function ZhejiangMap({
 
     loadGeoJson();
 
-    const resizeObserver = new ResizeObserver(() => {
-      chart.resize();
-    });
+    const resizeObserver = new ResizeObserver(() => chart.resize());
     resizeObserver.observe(chartDomRef.current);
 
     return () => {
@@ -145,10 +135,12 @@ export default function ZhejiangMap({
     const chart = chartRef.current;
     if (!chart || !mapReady) return;
 
-    const regionStyles = citiesData.map((city) => {
+    const citiesWithCoordinates = cities.filter((city) => cityCoordinates[city.id]);
+
+    const regionStyles = citiesWithCoordinates.map((city) => {
       const isSelected = selectedCityId === city.id;
       const isHovered = hoveredCity?.id === city.id;
-      const residentLevel = city.residentsAdded / maxResidents;
+      const residentLevel = safeNumber(city.residentsAdded) / maxResidents;
 
       return {
         name: city.name,
@@ -170,13 +162,13 @@ export default function ZhejiangMap({
       };
     });
 
-    const mapData = citiesData.map((city) => {
+    const mapData = citiesWithCoordinates.map((city) => {
       const isSelected = selectedCityId === city.id;
       const isHovered = hoveredCity?.id === city.id;
       return {
         name: city.name,
-        value: city.residentsAdded,
-        height: 3 + (city.residentsAdded / maxResidents) * 9 + (isSelected ? 4 : 0),
+        value: safeNumber(city.residentsAdded),
+        height: 3 + (safeNumber(city.residentsAdded) / maxResidents) * 9 + (isSelected ? 4 : 0),
         itemStyle: {
           color: isSelected
             ? "rgba(16, 185, 129, 0.96)"
@@ -187,27 +179,27 @@ export default function ZhejiangMap({
       };
     });
 
-    const dataPillars = citiesData.map((city) => {
+    const dataPillars = citiesWithCoordinates.map((city) => {
       const coordinate = cityCoordinates[city.id];
       const isSelected = selectedCityId === city.id;
-      const normalizedHeight = 5 + (city.residentsAdded / maxResidents) * 38;
+      const normalizedHeight = 5 + (safeNumber(city.residentsAdded) / maxResidents) * 38;
       return {
         name: city.name,
         value: [coordinate[0], coordinate[1], normalizedHeight],
         itemStyle: {
           color: isSelected ? "#34d399" : "#22d3ee",
-          opacity: isSelected ? 0.96 : 0.68
+          opacity: isSelected ? 0.96 : 0.62
         }
       };
     });
 
-    const cityNodes = citiesData.map((city) => {
+    const cityNodes = citiesWithCoordinates.map((city) => {
       const coordinate = cityCoordinates[city.id];
       const isSelected = selectedCityId === city.id;
       const isHovered = hoveredCity?.id === city.id;
       return {
         name: city.name,
-        value: [coordinate[0], coordinate[1], 6 + (city.doctors / maxDoctors) * 18],
+        value: [coordinate[0], coordinate[1], 6 + (safeNumber(city.doctors) / maxDoctors) * 18],
         symbolSize: isSelected ? 18 : isHovered ? 15 : 10,
         itemStyle: {
           color: isSelected ? "#10b981" : "#38bdf8",
@@ -217,12 +209,12 @@ export default function ZhejiangMap({
     });
 
     const hangzhouCoordinate = cityCoordinates.hangzhou;
-    const dataFlows = citiesData
+    const dataFlows = citiesWithCoordinates
       .filter((city) => city.id !== "hangzhou")
       .map((city) => ({
         name: `杭州-${city.name}`,
         coords: [hangzhouCoordinate, cityCoordinates[city.id]],
-        value: city.recentAdded
+        value: safeNumber(city.recentAdded)
       }));
 
     const option: any = {
@@ -233,18 +225,20 @@ export default function ZhejiangMap({
         borderWidth: 1,
         borderColor: "rgba(34, 211, 238, 0.35)",
         backgroundColor: "rgba(2, 6, 23, 0.92)",
-        textStyle: {
-          color: "#e2e8f0"
-        },
+        textStyle: { color: "#e2e8f0" },
         formatter: (params: any) => {
-          const city = resolveCityByRegionName(params.name);
+          const city = resolveCityByRegionName(cities, params.name);
           if (!city) return params.name ?? "浙江省";
+          const doctors = safeNumber(city.doctors);
+          const activeDoctors = safeNumber(city.activeDoctors);
+          const activeRate = doctors > 0 ? ((activeDoctors / doctors) * 100).toFixed(1) : "-";
+
           return [
             `<strong style=\"font-size:13px;color:#67e8f9\">${city.name}</strong>`,
-            `入驻医护：${city.doctors.toLocaleString()} 位`,
+            `入驻医护：${doctors.toLocaleString()} 位`,
             `添加居民：${formatTenThousand(city.residentsAdded)} 人`,
-            `近增好友：+${city.recentAdded.toLocaleString()} 人`,
-            `单聊回复率：${city.singleReplyRate}%`
+            `近增好友：+${safeNumber(city.recentAdded).toLocaleString()} 人`,
+            `医护激活率：${activeRate}%`
           ].join("<br/>");
         }
       },
@@ -253,24 +247,13 @@ export default function ZhejiangMap({
         roam: true,
         silent: false,
         regionHeight: 5.6,
-        groundPlane: {
-          show: true,
-          color: "rgba(15, 23, 42, 0.34)"
-        },
+        groundPlane: { show: true, color: "rgba(15, 23, 42, 0.34)" },
         shading: "lambert",
-        realisticMaterial: {
-          roughness: 0.56,
-          metalness: 0.1
-        },
+        realisticMaterial: { roughness: 0.56, metalness: 0.1 },
         environment: "rgba(2, 6, 23, 0)",
         boxWidth: 92,
         boxDepth: 76,
-        label: {
-          show: true,
-          color: "#cbd5e1",
-          fontSize: 10,
-          distance: 3
-        },
+        label: { show: true, color: "#cbd5e1", fontSize: 10, distance: 3 },
         itemStyle: {
           color: "rgba(15, 118, 164, 0.86)",
           borderColor: "rgba(125, 211, 252, 0.48)",
@@ -278,17 +261,8 @@ export default function ZhejiangMap({
           opacity: 0.98
         },
         emphasis: {
-          label: {
-            show: true,
-            color: "#ffffff",
-            fontSize: 13,
-            fontWeight: 800
-          },
-          itemStyle: {
-            color: "rgba(34, 211, 238, 0.92)",
-            borderColor: "#a7f3d0",
-            borderWidth: 2.4
-          }
+          label: { show: true, color: "#ffffff", fontSize: 13, fontWeight: 800 },
+          itemStyle: { color: "rgba(34, 211, 238, 0.92)", borderColor: "#a7f3d0", borderWidth: 2.4 }
         },
         regions: regionStyles,
         viewControl: {
@@ -307,36 +281,16 @@ export default function ZhejiangMap({
           maxDistance: 138
         },
         light: {
-          main: {
-            intensity: 1.58,
-            shadow: true,
-            alpha: 48,
-            beta: 26
-          },
-          ambient: {
-            intensity: 0.58
-          },
-          ambientCubemap: {
-            exposure: 0.9,
-            diffuseIntensity: 0.45,
-            specularIntensity: 0.24
-          }
+          main: { intensity: 1.58, shadow: true, alpha: 48, beta: 26 },
+          ambient: { intensity: 0.58 },
+          ambientCubemap: { exposure: 0.9, diffuseIntensity: 0.45, specularIntensity: 0.24 }
         },
         postEffect: {
           enable: true,
-          bloom: {
-            enable: true,
-            bloomIntensity: 0.18
-          },
-          SSAO: {
-            enable: true,
-            radius: 2,
-            intensity: 1.2
-          }
+          bloom: { enable: true, bloomIntensity: 0.18 },
+          SSAO: { enable: true, radius: 2, intensity: 1.2 }
         },
-        temporalSuperSampling: {
-          enable: true
-        }
+        temporalSuperSampling: { enable: true }
       },
       series: [
         {
@@ -347,12 +301,8 @@ export default function ZhejiangMap({
           silent: true,
           regionHeight: 1.2,
           shading: "lambert",
-          itemStyle: {
-            opacity: 0.04
-          },
-          emphasis: {
-            disabled: true
-          }
+          itemStyle: { opacity: 0.04 },
+          emphasis: { disabled: true }
         },
         {
           name: "城市数据光柱",
@@ -364,17 +314,9 @@ export default function ZhejiangMap({
           barSize: 1.25,
           minHeight: 2,
           shading: "lambert",
-          label: {
-            show: false
-          },
+          label: { show: false },
           emphasis: {
-            label: {
-              show: true,
-              formatter: "{b}",
-              color: "#ffffff",
-              fontSize: 12,
-              fontWeight: 700
-            }
+            label: { show: true, formatter: "{b}", color: "#ffffff", fontSize: 12, fontWeight: 700 }
           }
         },
         {
@@ -384,26 +326,9 @@ export default function ZhejiangMap({
           data: cityNodes,
           symbol: "circle",
           blendMode: "lighter",
-          label: {
-            show: true,
-            formatter: "{b}",
-            distance: 8,
-            color: "#e0f2fe",
-            fontSize: 10,
-            fontWeight: 700
-          },
-          itemStyle: {
-            borderColor: "#ecfeff",
-            borderWidth: 1.2,
-            shadowBlur: 18,
-            shadowColor: "#22d3ee"
-          },
-          emphasis: {
-            scale: true,
-            itemStyle: {
-              color: "#34d399"
-            }
-          }
+          label: { show: true, formatter: "{b}", distance: 8, color: "#e0f2fe", fontSize: 10, fontWeight: 700 },
+          itemStyle: { borderColor: "#ecfeff", borderWidth: 1.2, shadowBlur: 18, shadowColor: "#22d3ee" },
+          emphasis: { scale: true, itemStyle: { color: "#34d399" } }
         },
         {
           name: "省级数据流",
@@ -411,43 +336,31 @@ export default function ZhejiangMap({
           coordinateSystem: "geo3D",
           data: dataFlows,
           blendMode: "lighter",
-          effect: {
-            show: true,
-            trailWidth: 4,
-            trailLength: 0.16,
-            trailOpacity: 0.72,
-            constantSpeed: 22
-          },
-          lineStyle: {
-            width: 1.8,
-            color: "#38bdf8",
-            opacity: 0.42
-          }
+          effect: { show: true, trailWidth: 4, trailLength: 0.16, trailOpacity: 0.72, constantSpeed: 22 },
+          lineStyle: { width: 1.8, color: "#38bdf8", opacity: 0.42 }
         }
       ]
     };
 
     chart.setOption(option, true);
-  }, [hoveredCity, isDark, mapReady, maxDoctors, maxResidents, selectedCityId]);
+  }, [cities, hoveredCity, isDark, mapReady, maxDoctors, maxResidents, selectedCityId]);
 
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || !mapReady) return;
 
     const handleMouseOver = (params: any) => {
-      const city = resolveCityByRegionName(params.name);
+      const city = resolveCityByRegionName(cities, params.name);
       if (city) setHoveredCity(city);
     };
 
     const handleClick = (params: any) => {
-      const city = resolveCityByRegionName(params.name);
+      const city = resolveCityByRegionName(cities, params.name);
       if (!city) return;
       onSelectCity(selectedCityId === city.id ? null : city.id);
     };
 
-    const handleGlobalOut = () => {
-      setHoveredCity(null);
-    };
+    const handleGlobalOut = () => setHoveredCity(null);
 
     chart.off("mouseover");
     chart.off("click");
@@ -461,7 +374,11 @@ export default function ZhejiangMap({
       chart.off("click", handleClick);
       chart.off("globalout", handleGlobalOut);
     };
-  }, [mapReady, onSelectCity, selectedCityId, setHoveredCity]);
+  }, [cities, mapReady, onSelectCity, selectedCityId, setHoveredCity]);
+
+  const activeDoctors = safeNumber(activeCity?.activeDoctors);
+  const activeDoctorTotal = safeNumber(activeCity?.doctors);
+  const activeRate = activeDoctorTotal > 0 ? ((activeDoctors / activeDoctorTotal) * 100).toFixed(1) : "-";
 
   return (
     <div
@@ -473,11 +390,10 @@ export default function ZhejiangMap({
         <div className="absolute -left-24 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full border border-cyan-400/10 shadow-[0_0_90px_rgba(34,211,238,0.18)]" />
         <div className="absolute right-8 top-20 h-40 w-40 rounded-full border border-emerald-400/10 shadow-[0_0_70px_rgba(16,185,129,0.12)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent animate-pulse" />
-        <div className="absolute left-0 top-0 h-full w-full bg-[linear-gradient(180deg,transparent_0%,rgba(34,211,238,0.045)_50%,transparent_100%)] animate-pulse" />
       </div>
 
       <div className="flex justify-between items-start z-20 gap-3">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2 text-[10px] text-cyan-300/80 font-mono tracking-[0.32em] uppercase">
             <Satellite className="w-3.5 h-3.5" />
             Zhejiang Digital Twin Cockpit
@@ -489,14 +405,23 @@ export default function ZhejiangMap({
             </span>
           </h1>
           <span className="text-[11px] text-slate-400 font-mono">
-            数据更新截止时间：2024年8月5日 23:59:59 ｜ 真实地理边界 · 省市联动 · 运行态势
+            数据更新截止时间：{updateTime} ｜ 真实地理边界 · 省市联动 · 运行态势
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            id="open-excel-portal"
+            onClick={onOpenUpload}
+            className="text-[10.5px] px-3 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer font-bold shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:shadow-[0_0_15px_rgba(16,185,129,0.35)] transition-all"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Excel 导入</span>
+          </button>
+
           <div className="hidden xl:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-emerald-400/20 bg-emerald-400/8 text-[10px] text-emerald-300 font-mono">
             <Activity className="w-3.5 h-3.5" />
-            LIVE LINKAGE
+            LIVE
           </div>
 
           {selectedCityId && (
@@ -534,7 +459,7 @@ export default function ZhejiangMap({
             省级数据流向
           </div>
           <div className="mt-1 text-[9px] text-slate-400 leading-relaxed">
-            杭州枢纽连接 10 个地市<br />光柱高度映射居民连接规模
+            杭州枢纽连接各地市<br />光柱高度映射居民连接规模
           </div>
         </div>
       </div>
@@ -551,19 +476,17 @@ export default function ZhejiangMap({
               <span className="text-xs font-bold flex items-center gap-1.5 text-cyan-100">
                 <MapPin className="w-3.5 h-3.5 text-cyan-300" />
                 {activeCity.name}
-                <span className="text-[10px] uppercase font-mono font-normal opacity-60">
-                  ({activeCity.pinyin})
-                </span>
+                <span className="text-[10px] uppercase font-mono font-normal opacity-60">({activeCity.pinyin})</span>
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-400/20">
-                激活率: {((activeCity.activeDoctors / activeCity.doctors) * 100).toFixed(1)}%
+                激活率: {activeRate}%
               </span>
             </div>
 
             <div className="grid grid-cols-4 gap-2 text-[10px]">
               <div>
                 <span className="text-slate-500 block text-[9px] mb-0.5">入驻医护</span>
-                <span className="font-mono font-bold">{activeCity.doctors.toLocaleString()} 位</span>
+                <span className="font-mono font-bold">{safeNumber(activeCity.doctors).toLocaleString()} 位</span>
               </div>
               <div>
                 <span className="text-slate-500 block text-[9px] mb-0.5">添加居民</span>
@@ -571,11 +494,13 @@ export default function ZhejiangMap({
               </div>
               <div>
                 <span className="text-slate-500 block text-[9px] mb-0.5">近增好友</span>
-                <span className="text-emerald-400 font-mono font-extrabold">+{activeCity.recentAdded.toLocaleString()}</span>
+                <span className="text-emerald-400 font-mono font-extrabold">+{safeNumber(activeCity.recentAdded).toLocaleString()}</span>
               </div>
               <div>
                 <span className="text-slate-500 block text-[9px] mb-0.5">单聊回复率</span>
-                <span className="text-cyan-200 font-mono font-extrabold">{activeCity.singleReplyRate}%</span>
+                <span className="text-cyan-200 font-mono font-extrabold">
+                  {activeCity.singleReplyRate !== null ? `${activeCity.singleReplyRate}%` : "-"}
+                </span>
               </div>
             </div>
           </motion.div>
