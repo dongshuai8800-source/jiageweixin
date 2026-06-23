@@ -158,3 +158,35 @@
 #applet-viewport-root .font-mono {
   letter-spacing: -0.01em;
 }
+
+#zhejiang-map-container.jiangnan-map-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255,255,255,0.74), transparent 28%),
+    radial-gradient(circle at 72% 22%, rgba(15,159,114,0.10), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.16), transparent 48%);
+}
+
+#zhejiang-map-container .jiangnan-mountain-layer {
+  background:
+    linear-gradient(158deg, transparent 0 50%, rgba(54,83,77,0.13) 51%, rgba(54,83,77,0.06) 64%, transparent 66%),
+    linear-gradient(142deg, transparent 0 58%, rgba(109,143,125,0.13) 59%, rgba(109,143,125,0.05) 72%, transparent 74%),
+    linear-gradient(170deg, transparent 0 64%, rgba(47,127,159,0.08) 65%, rgba(47,127,159,0.03) 78%, transparent 80%);
+  filter: blur(0.2px);
+}
+
+#zhejiang-map-container .jiangnan-water-layer {
+  background:
+    repeating-radial-gradient(ellipse at 50% 100%, rgba(47,127,159,0.12) 0 1px, transparent 1px 18px),
+    linear-gradient(180deg, transparent, rgba(255,255,255,0.42));
+  opacity: 0.72;
+  mix-blend-mode: multiply;
+}
+
+#zhejiang-map-container canvas {
+  filter: saturate(0.92) contrast(0.96);
+}
