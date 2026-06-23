@@ -1,11 +1,25 @@
 #applet-viewport-root {
+  --jm-ink: #17342f;
+  --jm-ink-soft: #36534d;
+  --jm-muted: #6f827b;
+  --jm-line: rgba(145, 171, 161, 0.44);
+  --jm-card: rgba(255, 255, 255, 0.74);
+  --jm-card-strong: rgba(255, 255, 255, 0.86);
+  --jm-panel: rgba(246, 250, 246, 0.78);
+  --jm-green: #0f9f72;
+  --jm-green-deep: #08775f;
+  --jm-tea: #6d8f7d;
+  --jm-blue: #2f7f9f;
+  --jm-gold: #9b7b35;
+  --jm-shadow: rgba(31, 68, 58, 0.13);
+
   position: relative;
   min-height: 100vh;
-  color: #102a2e !important;
+  color: var(--jm-ink) !important;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255,255,255,0.82), transparent 28%),
-    radial-gradient(circle at 78% 18%, rgba(7,193,96,0.12), transparent 32%),
-    linear-gradient(180deg, #eef8f4 0%, #f7fbf8 42%, #e8f2ec 100%) !important;
+    radial-gradient(circle at 14% 13%, rgba(255, 255, 255, 0.92), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(15, 159, 114, 0.08), transparent 34%),
+    linear-gradient(180deg, #f1f6f1 0%, #f7f9f3 46%, #e8f0e7 100%) !important;
 }
 
 #applet-viewport-root::before {
@@ -15,11 +29,11 @@
   pointer-events: none;
   z-index: 0;
   background:
-    linear-gradient(165deg, transparent 0 52%, rgba(30,85,72,0.12) 53%, rgba(30,85,72,0.05) 64%, transparent 66%),
-    linear-gradient(155deg, transparent 0 58%, rgba(40,105,90,0.10) 59%, rgba(40,105,90,0.04) 70%, transparent 72%),
-    repeating-linear-gradient(0deg, rgba(7,193,96,0.045) 0 1px, transparent 1px 44px),
-    repeating-linear-gradient(90deg, rgba(14,165,233,0.035) 0 1px, transparent 1px 44px);
-  opacity: 0.9;
+    linear-gradient(165deg, transparent 0 53%, rgba(50, 96, 80, 0.085) 54%, rgba(50, 96, 80, 0.032) 66%, transparent 68%),
+    linear-gradient(155deg, transparent 0 60%, rgba(80, 122, 106, 0.07) 61%, rgba(80, 122, 106, 0.025) 73%, transparent 75%),
+    repeating-linear-gradient(0deg, rgba(15, 159, 114, 0.032) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, rgba(47, 127, 159, 0.024) 0 1px, transparent 1px 48px);
+  opacity: 0.78;
 }
 
 #applet-viewport-root::after {
@@ -27,7 +41,7 @@
   position: fixed;
   right: 42px;
   bottom: 28px;
-  color: rgba(22,101,88,0.10);
+  color: rgba(23, 52, 47, 0.075);
   font-size: 54px;
   letter-spacing: 0.18em;
   font-weight: 800;
@@ -36,7 +50,7 @@
 }
 
 #applet-viewport-root > .absolute {
-  opacity: 0.18 !important;
+  opacity: 0.10 !important;
 }
 
 #applet-viewport-root [class*="bg-[#0b1329]"],
@@ -45,17 +59,24 @@
 #applet-viewport-root [class*="bg-[#020617]"],
 #applet-viewport-root #conversation-insights-panel > div,
 #applet-viewport-root #zhejiang-map-container {
-  background: rgba(255, 255, 255, 0.64) !important;
-  border-color: rgba(130, 177, 166, 0.55) !important;
-  box-shadow: 0 18px 48px rgba(31, 82, 72, 0.14), inset 0 1px 0 rgba(255,255,255,0.62) !important;
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  background: var(--jm-card) !important;
+  border-color: var(--jm-line) !important;
+  box-shadow: 0 16px 42px var(--jm-shadow), inset 0 1px 0 rgba(255,255,255,0.68) !important;
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
 #applet-viewport-root #zhejiang-map-container {
   background:
-    radial-gradient(circle at 72% 22%, rgba(7,193,96,0.12), transparent 38%),
-    rgba(255, 255, 255, 0.58) !important;
+    radial-gradient(circle at 70% 20%, rgba(15, 159, 114, 0.075), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.80), rgba(246,250,246,0.70)) !important;
+}
+
+#applet-viewport-root .bg-clip-text,
+#applet-viewport-root .text-transparent {
+  background-image: none !important;
+  color: var(--jm-ink) !important;
+  -webkit-text-fill-color: var(--jm-ink) !important;
 }
 
 #applet-viewport-root .text-white,
@@ -63,7 +84,7 @@
 #applet-viewport-root .text-gray-100,
 #applet-viewport-root .text-gray-250,
 #applet-viewport-root .text-slate-200 {
-  color: #102a2e !important;
+  color: var(--jm-ink) !important;
 }
 
 #applet-viewport-root .text-slate-300,
@@ -71,34 +92,44 @@
 #applet-viewport-root .text-slate-500,
 #applet-viewport-root .text-gray-400,
 #applet-viewport-root .text-gray-500 {
-  color: #607a78 !important;
+  color: var(--jm-muted) !important;
 }
 
+#applet-viewport-root .text-cyan-100,
 #applet-viewport-root .text-cyan-200,
 #applet-viewport-root .text-cyan-300,
 #applet-viewport-root .text-cyan-400,
 #applet-viewport-root .text-sky-300,
 #applet-viewport-root .text-sky-400 {
-  color: #0e7490 !important;
+  color: var(--jm-blue) !important;
 }
 
+#applet-viewport-root .text-emerald-200,
 #applet-viewport-root .text-emerald-300,
 #applet-viewport-root .text-emerald-400,
 #applet-viewport-root .text-emerald-500,
+#applet-viewport-root .text-teal-200,
 #applet-viewport-root .text-teal-400 {
-  color: #07c160 !important;
+  color: var(--jm-green-deep) !important;
 }
 
 #applet-viewport-root .text-amber-500,
 #applet-viewport-root .text-amber-200 {
-  color: #b7791f !important;
+  color: var(--jm-gold) !important;
 }
 
 #applet-viewport-root [class*="border-slate-800"],
 #applet-viewport-root [class*="border-slate-700"],
 #applet-viewport-root [class*="border-cyan"],
 #applet-viewport-root [class*="border-emerald"] {
-  border-color: rgba(130, 177, 166, 0.5) !important;
+  border-color: var(--jm-line) !important;
+}
+
+#applet-viewport-root [class*="bg-cyan"],
+#applet-viewport-root [class*="bg-sky"],
+#applet-viewport-root [class*="bg-emerald"],
+#applet-viewport-root [class*="bg-teal"] {
+  background-color: rgba(15, 159, 114, 0.075) !important;
 }
 
 #applet-viewport-root button {
@@ -107,13 +138,23 @@
 
 #applet-viewport-root button[id="open-excel-portal"],
 #applet-viewport-root button:hover {
-  background: rgba(7, 193, 96, 0.12) !important;
-  border-color: rgba(7, 193, 96, 0.32) !important;
-  color: #047857 !important;
+  background: rgba(15, 159, 114, 0.12) !important;
+  border-color: rgba(15, 159, 114, 0.32) !important;
+  color: var(--jm-green-deep) !important;
 }
 
 #conversation-insights-panel .rounded-lg,
-#zhejiang-map-container .rounded-xl {
-  background: rgba(255,255,255,0.56) !important;
-  border-color: rgba(130,177,166,0.42) !important;
+#zhejiang-map-container .rounded-xl,
+#applet-viewport-root input {
+  background: var(--jm-panel) !important;
+  border-color: var(--jm-line) !important;
+  color: var(--jm-ink) !important;
+}
+
+#applet-viewport-root input::placeholder {
+  color: rgba(111, 130, 123, 0.72) !important;
+}
+
+#applet-viewport-root .font-mono {
+  letter-spacing: -0.01em;
 }
