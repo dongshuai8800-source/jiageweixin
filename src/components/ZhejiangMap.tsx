@@ -55,7 +55,6 @@ export default function ZhejiangMap({
   onSelectCity,
   hoveredCity,
   setHoveredCity,
-  theme,
   onOpenUpload
 }: ZhejiangMapProps) {
   const chartDomRef = useRef<HTMLDivElement | null>(null);
@@ -64,7 +63,6 @@ export default function ZhejiangMap({
   const [mapVersion, setMapVersion] = useState(0);
   const [mapSource, setMapSource] = useState<"local" | "remote">("local");
   const [loadError, setLoadError] = useState<string | null>(null);
-  const isDark = theme === "dark";
 
   const selectedCity = useMemo(() => cities.find((city) => city.id === selectedCityId) ?? null, [cities, selectedCityId]);
   const activeCity = selectedCity ?? hoveredCity;
@@ -73,13 +71,13 @@ export default function ZhejiangMap({
 
   useEffect(() => {
     if (!chartDomRef.current) return;
-    const chart = echarts.init(chartDomRef.current, isDark ? "dark" : undefined, { renderer: "canvas" });
+    const chart = echarts.init(chartDomRef.current, undefined, { renderer: "canvas" });
     chartRef.current = chart;
     chart.showLoading("default", {
       text: "正在加载浙江省高质量边界地图...",
-      color: "#22d3ee",
-      textColor: "#94a3b8",
-      maskColor: "rgba(3,7,18,0.82)"
+      color: "#0f9f72",
+      textColor: "#6f827b",
+      maskColor: "rgba(246,250,246,0.72)"
     });
 
     let cancelled = false;
@@ -122,7 +120,7 @@ export default function ZhejiangMap({
       chart.dispose();
       chartRef.current = null;
     };
-  }, [isDark]);
+  }, []);
 
   useEffect(() => {
     const chart = chartRef.current;
@@ -136,13 +134,13 @@ export default function ZhejiangMap({
       return {
         name: city.name,
         itemStyle: {
-          areaColor: selected ? "rgba(16,185,129,0.72)" : hovered ? "rgba(14,165,233,0.48)" : dim ? "rgba(15,38,62,0.38)" : "rgba(15,38,62,0.72)",
-          borderColor: selected ? "#bbf7d0" : hovered ? "#a5f3fc" : "rgba(148,163,184,0.58)",
+          areaColor: selected ? "rgba(15,159,114,0.70)" : hovered ? "rgba(47,127,159,0.32)" : dim ? "rgba(207,224,216,0.42)" : "rgba(196,218,209,0.76)",
+          borderColor: selected ? "#08775f" : hovered ? "#2f7f9f" : "rgba(82,111,103,0.42)",
           borderWidth: selected || hovered ? 2 : 1
         },
         label: {
           show: selected || hovered,
-          color: "#f8fafc",
+          color: selected ? "#064e3b" : "#17342f",
           fontSize: 12,
           fontWeight: 800
         }
@@ -156,11 +154,11 @@ export default function ZhejiangMap({
       return {
         name: city.name,
         value: [coordinate[0], coordinate[1], num(city.residentsAdded)],
-        symbolSize: selected ? 14 : hovered ? 12 : 7 + (num(city.residentsAdded) / maxResidents) * 7,
+        symbolSize: selected ? 15 : hovered ? 12 : 7 + (num(city.residentsAdded) / maxResidents) * 7,
         itemStyle: {
-          color: selected ? "#34d399" : hovered ? "#67e8f9" : "#94a3b8",
-          borderColor: "#e2e8f0",
-          borderWidth: selected || hovered ? 1.3 : 0.7
+          color: selected ? "#0f9f72" : hovered ? "#2f7f9f" : "#6d8f7d",
+          borderColor: "rgba(255,255,255,0.92)",
+          borderWidth: selected || hovered ? 2 : 1
         }
       };
     });
@@ -177,9 +175,10 @@ export default function ZhejiangMap({
       backgroundColor: "transparent",
       tooltip: {
         trigger: "item",
-        borderColor: "rgba(34,211,238,0.35)",
-        backgroundColor: "rgba(2,6,23,0.92)",
-        textStyle: { color: "#e2e8f0" },
+        borderColor: "rgba(15,159,114,0.24)",
+        backgroundColor: "rgba(255,255,255,0.96)",
+        textStyle: { color: "#17342f" },
+        extraCssText: "box-shadow:0 14px 34px rgba(31,68,58,0.18);border-radius:12px;",
         formatter: (params: any) => {
           const city = findCity(cities, params.name);
           if (!city) return params.name ?? "浙江省";
@@ -191,31 +190,31 @@ export default function ZhejiangMap({
       geo: {
         map: MAP_NAME,
         roam: false,
-        layoutCenter: ["51%", "52%"],
+        layoutCenter: ["51%", "53%"],
         layoutSize: "88%",
         aspectScale: 0.9,
         silent: false,
         itemStyle: {
-          areaColor: "rgba(15,38,62,0.72)",
-          borderColor: "rgba(148,163,184,0.58)",
+          areaColor: "rgba(196,218,209,0.76)",
+          borderColor: "rgba(82,111,103,0.42)",
           borderWidth: 1
         },
         emphasis: {
-          itemStyle: { areaColor: "rgba(14,165,233,0.48)", borderColor: "#a5f3fc", borderWidth: 2 },
-          label: { show: true, color: "#ffffff", fontWeight: 800 }
+          itemStyle: { areaColor: "rgba(47,127,159,0.32)", borderColor: "#2f7f9f", borderWidth: 2 },
+          label: { show: true, color: "#17342f", fontWeight: 800 }
         },
         regions
       },
       series: [
         {
-          name: "省级数据流",
+          name: "省级服务流",
           type: "lines",
           coordinateSystem: "geo",
           zlevel: 2,
           data: flowData,
           silent: true,
           effect: { show: true, period: 6, trailLength: 0.18, symbol: "circle", symbolSize: 3 },
-          lineStyle: { color: "#38bdf8", width: 1, opacity: selectedCityId ? 0.16 : 0.08, curveness: 0.18 }
+          lineStyle: { color: "#0f9f72", width: 1.2, opacity: selectedCityId ? 0.18 : 0.12, curveness: 0.18 }
         },
         {
           name: "城市服务节点",
@@ -223,19 +222,19 @@ export default function ZhejiangMap({
           coordinateSystem: "geo",
           zlevel: 3,
           data: nodeData,
-          rippleEffect: { brushType: "stroke", scale: 2.5, period: 4 },
+          rippleEffect: { brushType: "stroke", scale: 2.3, period: 4 },
           label: {
             show: true,
             formatter: "{b}",
             position: "top",
-            color: "#e2e8f0",
+            color: "#17342f",
             fontSize: 10,
-            fontWeight: 700,
-            backgroundColor: "rgba(2,6,23,0.62)",
-            borderColor: "rgba(148,163,184,0.38)",
+            fontWeight: 800,
+            backgroundColor: "rgba(255,255,255,0.82)",
+            borderColor: "rgba(145,171,161,0.55)",
             borderWidth: 1,
-            borderRadius: 6,
-            padding: [3, 6]
+            borderRadius: 7,
+            padding: [3, 7]
           }
         }
       ]
@@ -276,41 +275,42 @@ export default function ZhejiangMap({
   const activeRate = activeDoctorTotal > 0 ? ((activeDoctors / activeDoctorTotal) * 100).toFixed(1) : "-";
 
   return (
-    <div className="relative w-full h-[600px] lg:h-[725px] rounded-2xl border border-cyan-500/20 bg-[#020617]/90 shadow-[0_4px_35px_rgba(0,0,0,0.55),inset_0_0_35px_rgba(34,211,238,0.08)] text-white p-4 flex flex-col justify-between overflow-hidden" id="zhejiang-map-container">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.12),transparent_42%),linear-gradient(rgba(34,211,238,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.035)_1px,transparent_1px)] bg-[size:100%_100%,32px_32px,32px_32px]" />
-        <div className="absolute right-0 top-0 h-full w-[45%] bg-gradient-to-l from-sky-500/8 via-cyan-500/4 to-transparent" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent" />
+    <div className="relative w-full h-[600px] lg:h-[725px] rounded-2xl border border-emerald-500/20 bg-white/75 shadow-[0_18px_54px_rgba(31,68,58,0.16),inset_0_1px_0_rgba(255,255,255,0.7)] text-[#17342f] p-4 flex flex-col justify-between overflow-hidden jiangnan-map-panel" id="zhejiang-map-container">
+      <div className="absolute inset-0 pointer-events-none jiangnan-ink-bg">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_66%_18%,rgba(15,159,114,0.10),transparent_35%),radial-gradient(circle_at_18%_24%,rgba(255,255,255,0.86),transparent_30%)]" />
+        <div className="absolute inset-0 opacity-[0.22] bg-[linear-gradient(rgba(15,159,114,0.10)_1px,transparent_1px),linear-gradient(90deg,rgba(47,127,159,0.08)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="absolute left-0 right-0 bottom-0 h-48 jiangnan-mountain-layer" />
+        <div className="absolute left-0 right-0 bottom-0 h-32 jiangnan-water-layer" />
       </div>
 
       <div className="flex justify-between items-start z-20 gap-3">
         <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2 text-[10px] text-cyan-300/80 font-mono tracking-[0.32em] uppercase"><Satellite className="w-3.5 h-3.5" />Zhejiang Digital Twin Cockpit</div>
-          <h1 className="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-emerald-200 bg-clip-text text-transparent flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 text-[10px] text-[#2f7f9f] font-mono tracking-[0.32em] uppercase"><Satellite className="w-3.5 h-3.5" />Zhejiang Jiangnan Service Cockpit</div>
+          <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-[#17342f] flex items-center gap-2 flex-wrap">
             浙江省“加个微信，多个医生朋友”数据统计大屏
-            <span className="text-[9.5px] py-0.5 px-2 rounded-full font-bold border bg-cyan-500/10 text-cyan-200 border-cyan-400/30">高质量 GeoJSON 版</span>
+            <span className="text-[9.5px] py-0.5 px-2 rounded-full font-bold border bg-[#0f9f72]/10 text-[#08775f] border-[#0f9f72]/25">江南水墨服务版</span>
           </h1>
-          <span className="text-[11px] text-slate-400 font-mono">数据更新截止时间：{updateTime} ｜ {mapSource === "remote" ? "高质量浙江地市边界已加载" : "本地地图兜底加载中"}</span>
+          <span className="text-[11px] text-[#6f827b] font-mono">数据更新截止时间：{updateTime} ｜ {mapSource === "remote" ? "高质量浙江地市边界已加载" : "本地地图兜底加载中"}</span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button id="open-excel-portal" onClick={onOpenUpload} className="text-[10.5px] px-3 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer font-bold transition-all"><FileSpreadsheet className="w-3.5 h-3.5" />Excel 导入</button>
-          <div className="hidden xl:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-emerald-400/20 bg-emerald-400/8 text-[10px] text-emerald-300 font-mono"><Activity className="w-3.5 h-3.5" />LIVE</div>
-          {selectedCityId && <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onSelectCity(null)} className="text-[10px] px-2.5 py-1.5 rounded-lg border flex items-center gap-1 cursor-pointer bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-200 border-cyan-400/30"><RotateCcw className="w-3 h-3" />返回全省</motion.button>}
+          <button id="open-excel-portal" onClick={onOpenUpload} className="text-[10.5px] px-3 py-1.5 rounded bg-[#0f9f72]/10 hover:bg-[#0f9f72]/15 text-[#08775f] border border-[#0f9f72]/30 flex items-center gap-1.5 cursor-pointer font-bold transition-all"><FileSpreadsheet className="w-3.5 h-3.5" />Excel 导入</button>
+          <div className="hidden xl:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#0f9f72]/20 bg-[#0f9f72]/8 text-[10px] text-[#08775f] font-mono"><Activity className="w-3.5 h-3.5" />LIVE</div>
+          {selectedCityId && <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onSelectCity(null)} className="text-[10px] px-2.5 py-1.5 rounded-lg border flex items-center gap-1 cursor-pointer bg-[#2f7f9f]/10 hover:bg-[#2f7f9f]/15 text-[#2f7f9f] border-[#2f7f9f]/25"><RotateCcw className="w-3 h-3" />返回全省</motion.button>}
         </div>
       </div>
 
       <div className="relative z-10 flex-1 min-h-0 mt-1 flex items-center justify-center">
-        <div className="absolute left-3 top-4 z-20 rounded-xl border border-cyan-400/15 bg-slate-950/45 px-3 py-2 backdrop-blur-sm"><div className="flex items-center gap-1.5 text-[10px] text-cyan-200 font-semibold"><Waves className="w-3 h-3" />省级数据流向</div><div className="mt-1 text-[9px] text-slate-400 leading-relaxed">高质量地市边界<br />服务节点与数据流叠加</div></div>
+        <div className="absolute left-3 top-4 z-20 rounded-xl border border-[#91aba1]/40 bg-white/60 px-3 py-2 backdrop-blur-md shadow-[0_10px_28px_rgba(31,68,58,0.10)]"><div className="flex items-center gap-1.5 text-[10px] text-[#2f7f9f] font-semibold"><Waves className="w-3 h-3" />省级服务流向</div><div className="mt-1 text-[9px] text-[#6f827b] leading-relaxed">水墨地市边界<br />微信服务节点与数据流</div></div>
         <div ref={chartDomRef} className="w-full h-full min-h-[480px] lg:min-h-[585px]" />
-        {loadError && <div className="absolute inset-0 flex items-center justify-center p-6 text-center"><div className="rounded-xl border border-rose-400/25 bg-rose-950/30 px-4 py-3 text-xs text-rose-200 shadow-lg">浙江省地图加载失败：{loadError}</div></div>}
+        {loadError && <div className="absolute inset-0 flex items-center justify-center p-6 text-center"><div className="rounded-xl border border-rose-400/25 bg-rose-50/80 px-4 py-3 text-xs text-rose-700 shadow-lg">浙江省地图加载失败：{loadError}</div></div>}
       </div>
 
       <AnimatePresence>
-        {activeCity && <motion.div initial={{ opacity: 0, y: 14, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.96 }} className="absolute bottom-14 left-4 right-4 z-30 p-3.5 rounded-xl border shadow-lg bg-slate-950/90 border-cyan-400/25 text-white backdrop-blur-md"><div className="flex justify-between items-center border-b border-cyan-400/10 pb-1.5 mb-2"><span className="text-xs font-bold flex items-center gap-1.5 text-cyan-100"><MapPin className="w-3.5 h-3.5 text-cyan-300" />{activeCity.name}<span className="text-[10px] uppercase font-mono font-normal opacity-60">({activeCity.pinyin})</span></span><span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-400/20">激活率: {activeRate}%</span></div><div className="grid grid-cols-4 gap-2 text-[10px]"><div><span className="text-slate-500 block text-[9px] mb-0.5">入驻医护</span><span className="font-mono font-bold">{num(activeCity.doctors).toLocaleString()} 位</span></div><div><span className="text-slate-500 block text-[9px] mb-0.5">添加居民</span><span className="font-mono font-bold">{wan(activeCity.residentsAdded)} 人</span></div><div><span className="text-slate-500 block text-[9px] mb-0.5">近增好友</span><span className="text-emerald-400 font-mono font-extrabold">+{num(activeCity.recentAdded).toLocaleString()}</span></div><div><span className="text-slate-500 block text-[9px] mb-0.5">单聊回复率</span><span className="text-cyan-200 font-mono font-extrabold">{activeCity.singleReplyRate !== null ? `${activeCity.singleReplyRate}%` : "-"}</span></div></div></motion.div>}
+        {activeCity && <motion.div initial={{ opacity: 0, y: 14, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.96 }} className="absolute bottom-14 left-4 right-4 z-30 p-3.5 rounded-xl border shadow-lg bg-white/86 border-[#91aba1]/45 text-[#17342f] backdrop-blur-md"><div className="flex justify-between items-center border-b border-[#91aba1]/30 pb-1.5 mb-2"><span className="text-xs font-bold flex items-center gap-1.5 text-[#17342f]"><MapPin className="w-3.5 h-3.5 text-[#0f9f72]" />{activeCity.name}<span className="text-[10px] uppercase font-mono font-normal opacity-60">({activeCity.pinyin})</span></span><span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#0f9f72]/10 text-[#08775f] border border-[#0f9f72]/20">激活率: {activeRate}%</span></div><div className="grid grid-cols-4 gap-2 text-[10px]"><div><span className="text-[#6f827b] block text-[9px] mb-0.5">入驻医护</span><span className="font-mono font-bold">{num(activeCity.doctors).toLocaleString()} 位</span></div><div><span className="text-[#6f827b] block text-[9px] mb-0.5">添加居民</span><span className="font-mono font-bold">{wan(activeCity.residentsAdded)} 人</span></div><div><span className="text-[#6f827b] block text-[9px] mb-0.5">近增好友</span><span className="text-[#08775f] font-mono font-extrabold">+{num(activeCity.recentAdded).toLocaleString()}</span></div><div><span className="text-[#6f827b] block text-[9px] mb-0.5">单聊回复率</span><span className="text-[#2f7f9f] font-mono font-extrabold">{activeCity.singleReplyRate !== null ? `${activeCity.singleReplyRate}%` : "-"}</span></div></div></motion.div>}
       </AnimatePresence>
 
-      <div className="flex justify-between items-center border-t border-cyan-400/10 pt-2 z-20"><div className="flex gap-3 text-[10px] text-slate-400"><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-slate-400/70 border border-slate-200/50 block" />高质量边界</div><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-400 border border-emerald-200 block animate-pulse" />选中地市</div><div className="hidden sm:flex items-center gap-1"><span className="w-7 h-px bg-gradient-to-r from-cyan-300/20 via-cyan-300 to-transparent block" />省级数据流</div></div><span className="text-[9px] font-mono opacity-70 flex items-center gap-1 text-slate-400"><Info className="w-3 h-3" />点击地市聚焦，再点一次取消</span></div>
+      <div className="flex justify-between items-center border-t border-[#91aba1]/30 pt-2 z-20"><div className="flex gap-3 text-[10px] text-[#6f827b]"><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-[#c4dad1] border border-white/80 block" />江南地市边界</div><div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-[#0f9f72] border border-white block animate-pulse" />选中地市</div><div className="hidden sm:flex items-center gap-1"><span className="w-7 h-px bg-gradient-to-r from-[#0f9f72]/15 via-[#0f9f72] to-transparent block" />微信服务流</div></div><span className="text-[9px] font-mono opacity-75 flex items-center gap-1 text-[#6f827b]"><Info className="w-3 h-3" />点击地市聚焦，再点一次取消</span></div>
     </div>
   );
 }
