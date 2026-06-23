@@ -15,6 +15,16 @@ interface WordCloudItem {
   weight: number;
 }
 
+interface FloatingWord extends WordCloudItem {
+  left: number;
+  top: number;
+  xMove: number;
+  yMove: number;
+  rotate: number;
+  duration: number;
+  delay: number;
+}
+
 const FALLBACK_CONVERSATIONS: LatestConversation[] = [
   { text: "医生，我爸这两天血压还是有点高，降压药需要调整吗？", city: "杭州市", district: "西湖区", community: "翠苑街道社区卫生服务中心", doctor: "王医生" },
   { text: "今天空腹血糖 7.8，早餐后能不能继续原来的药？", city: "嘉兴市", district: "桐乡市", community: "梧桐街道社区卫生服务中心", doctor: "沈医生" },
@@ -101,6 +111,31 @@ const wordStyle = (index: number) => {
   return `${colors[index % colors.length]} font-black`;
 };
 
+const buildFloatingWords = (words: WordCloudItem[]): FloatingWord[] => {
+  const anchors = [
+    [8, 18], [28, 12], [50, 18], [70, 14], [84, 26],
+    [14, 44], [34, 40], [56, 44], [76, 48],
+    [9, 70], [29, 72], [48, 68], [68, 74], [86, 70],
+    [18, 88], [42, 86], [63, 88], [80, 90]
+  ];
+
+  return words.map((word, index) => {
+    const [left, top] = anchors[index % anchors.length];
+    const seed = Array.from(word.text).reduce((sum, char) => sum + char.charCodeAt(0), 0) + index * 17;
+    const direction = seed % 2 === 0 ? 1 : -1;
+    return {
+      ...word,
+      left,
+      top,
+      xMove: direction * (10 + (seed % 22)),
+      yMove: (seed % 3 === 0 ? -1 : 1) * (7 + (seed % 18)),
+      rotate: direction * (1.5 + (seed % 5)),
+      duration: 8 + (seed % 8),
+      delay: index * 0.18
+    };
+  });
+};
+
 export default function ConversationInsights() {
   const [conversations, setConversations] = useState<LatestConversation[]>(FALLBACK_CONVERSATIONS);
 
@@ -128,6 +163,7 @@ export default function ConversationInsights() {
   }, []);
 
   const words = useMemo(() => buildWordCloud(conversations), [conversations]);
+  const floatingWords = useMemo(() => buildFloatingWords(words), [words]);
   const rollingItems = useMemo(() => [...conversations, ...conversations], [conversations]);
   const scrollDistance = Math.max(1, conversations.length) * 68;
 
@@ -139,20 +175,38 @@ export default function ConversationInsights() {
             <span className="p-1 rounded bg-cyan-500/10 border border-cyan-500/25 text-cyan-300"><Cloud className="w-3.5 h-3.5" /></span>
             <div>
               <h3 className="text-xs font-bold tracking-wider text-white uppercase">居民咨询词云</h3>
-              <p className="text-[9.5px] text-slate-500">根据最新对话内容实时提取高频主题</p>
+              <p className="text-[9.5px] text-slate-500">根据最新对话内容实时提取高频主题，自由漂浮展示</p>
             </div>
           </div>
-          <span className="text-[9px] text-cyan-300 font-mono">DYNAMIC CLOUD</span>
+          <span className="text-[9px] text-cyan-300 font-mono">FLOATING CLOUD</span>
         </div>
-        <div className="min-h-[170px] rounded-lg border border-cyan-500/10 bg-slate-950/35 p-4 flex flex-wrap content-center justify-center gap-x-5 gap-y-3">
-          {words.map((word, index) => (
+        <div className="relative h-[210px] rounded-lg border border-cyan-500/10 bg-slate-950/35 overflow-hidden">
+          <div className="absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_20%_25%,rgba(15,159,114,0.10),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(47,127,159,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.12),transparent)]" />
+          <div className="absolute inset-x-6 bottom-3 h-px bg-gradient-to-r from-transparent via-emerald-300/45 to-transparent" />
+          {floatingWords.map((word, index) => (
             <motion.span
               key={`${word.text}-${word.weight}`}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.035 }}
-              className={`${wordStyle(index)} leading-none drop-shadow-[0_0_10px_rgba(34,211,238,0.18)]`}
-              style={{ fontSize: `${12 + Math.round((word.weight / 100) * 20)}px` }}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{
+                opacity: [0.72, 1, 0.84, 1],
+                x: [0, word.xMove, -word.xMove * 0.55, word.xMove * 0.25, 0],
+                y: [0, word.yMove, -word.yMove * 0.45, word.yMove * 0.3, 0],
+                rotate: [0, word.rotate, -word.rotate * 0.45, word.rotate * 0.25, 0]
+              }}
+              transition={{
+                duration: word.duration,
+                repeat: Infinity,
+                repeatType: "mirror",
+                ease: "easeInOut",
+                delay: word.delay
+              }}
+              className={`absolute whitespace-nowrap ${wordStyle(index)} leading-none drop-shadow-[0_8px_18px_rgba(31,68,58,0.13)] select-none`}
+              style={{
+                left: `${word.left}%`,
+                top: `${word.top}%`,
+                fontSize: `${12 + Math.round((word.weight / 100) * 22)}px`,
+                transform: "translate(-50%, -50%)"
+              }}
               title={`词频权重：${word.weight}`}
             >
               {word.text}
